@@ -19,7 +19,3 @@ def create_change_week_markup(week: int, group=12837) -> InlineKeyboardMarkup:
     )
 
     return markup
-
-
-def create_more_markup(week):
-    pass
