@@ -3,7 +3,7 @@ import os
 import json
 import settings
 
-from schedule import ResponseCreator
+from schedule_repsonse import ResponseCreator
 from markup import keyboard_main
 
 import logging
