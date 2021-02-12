@@ -40,28 +40,29 @@ def send_help(message):
 def send_schedule(message):
     response_creator = ResponseCreator(group=12837)
     response = response_creator.form_response()
-    bot.send_message(message.chat.id, response.message, reply_markup=response.markup, parse_mode="HTML")
+    if response.is_success():
+        bot.send_message(message.chat.id, response.text, reply_markup=response.markup, parse_mode="HTML")
 
 
 @bot.callback_query_handler(func=lambda call: True)
 def handle_buttons(call):
     btn_data = json.loads(call.data)
+
     response_creator = ResponseCreator(group=btn_data["group"], week=btn_data["week"])
-
     response = response_creator.form_on_button_click_response(btn_data)
-
-    bot.edit_message_text(chat_id=call.message.chat.id,
-                          text=response.text,
-                          message_id=call.message.message_id,
-                          reply_markup=response.markup,
-                          parse_mode='HTML')
+    if response.is_success():
+        bot.edit_message_text(chat_id=call.message.chat.id,
+                              text=response.text,
+                              message_id=call.message.message_id,
+                              reply_markup=response.markup,
+                              parse_mode='HTML')
 
 
 @bot.inline_handler(func=lambda query: len(query.query) > 0)
 def send_schedule_inline(query):
     inline_response_creator = ResponseCreator(group=12837)
     inline_response = inline_response_creator.form_inline_response()
-    if inline_response.is_success:
+    if inline_response.is_success():
         bot.answer_inline_query(query.id, inline_response.items)
 
 

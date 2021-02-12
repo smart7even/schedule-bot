@@ -1,5 +1,6 @@
 from typing import List
-from data_types import Lesson, BtnTypes
+from core.types.lesson import Lesson
+from core.types.button import BtnTypes
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup
 import json
 

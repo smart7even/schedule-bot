@@ -1,22 +1,19 @@
-from data_types import Lesson
+from core.types.lesson import Lesson
 from bs4 import BeautifulSoup
 import re
 
-from typing import List
+from typing import List, Optional
 
 
-class Schedule:
-    def __init__(self, html_content=None, lessons=None):
+class UneconParser:
+    def __init__(self, html_content: bytes):
         self.html_content = html_content
-        if lessons:
-            self.lessons = lessons
-        else:
-            self.lessons = []
 
-    def get_schedule_from_html(self) -> None:
+    def parse_page(self):
         soup = BeautifulSoup(self.html_content, features="html.parser")
         day = None
         week = None
+        lessons = []
         for tr in soup.find_all("tr"):
             tr_class_names = tr["class"]
             if 'new_day_border' not in tr_class_names:
@@ -44,7 +41,34 @@ class Schedule:
 
                 lesson = Lesson(lesson_name, lesson_day,
                                 lesson_day_of_week, lesson_time, lesson_professor, lesson_location)
-                self.lessons.append(lesson)
+                lessons.append(lesson)
+
+        return lessons
+
+    def get_current_week_number(self) -> int:
+        soup = BeautifulSoup(self.html_content, features="html.parser")
+
+        week = r"w=(\d{2})"
+
+        prev_week_link = soup.find("span", {"class": "prev"}).a["href"]
+        next_week_link = soup.find("span", {"class": "next"}).a["href"]
+
+        prev_week_number = int(re.search(week, prev_week_link).groups()[0])
+        current_weak_number = prev_week_number + 1
+
+        return current_weak_number
+
+
+class Schedule:
+    def __init__(self, lessons: List[Lesson]):
+        self.lessons = lessons
+
+    @staticmethod
+    def get_schedule_from_html(html_content: bytes):
+        page_parser = UneconParser(html_content)
+        lessons = page_parser.parse_page()
+        schedule = Schedule(lessons)
+        return schedule
 
     def transform_schedule_to_str(self, is_detail_mode=False) -> str:
         day = None
@@ -84,18 +108,3 @@ class Schedule:
                 lessons_at_one_day.append(lesson)
 
         return lessons_at_one_day
-
-    def get_current_week_number(self) -> int:
-        soup = BeautifulSoup(self.html_content, features="html.parser")
-
-        week = r"w=(\d{2})"
-
-        prev_week_link = soup.find("span", {"class": "prev"}).a["href"]
-        next_week_link = soup.find("span", {"class": "next"}).a["href"]
-
-        prev_week_number = int(re.search(week, prev_week_link).groups()[0])
-        current_weak_number = prev_week_number + 1
-
-        return current_weak_number
-
-

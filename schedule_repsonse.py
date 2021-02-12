@@ -3,10 +3,11 @@ from typing import Optional
 
 import telebot
 
-from data_types import Response, BtnTypes, InlineResponse, ButtonClickResponse
+from core.types.button import BtnTypes
+from core.types.response import DefaultResponse, InlineResponse
 from markup import create_change_week_markup, create_get_full_days_markup, mix_markups
 from request import unecon_request
-from schedule import Schedule
+from schedule import Schedule, UneconParser
 
 
 class ResponseCreator:
@@ -14,15 +15,16 @@ class ResponseCreator:
         self.group = group
         self.week = week
 
-    def form_response(self) -> Response:
-        response = Response()
+    def form_response(self) -> DefaultResponse:
+        response = DefaultResponse()
         page = unecon_request(self.group, self.week)
 
         if page.status_code == 200:
-            schedule = Schedule(page.content)
-            schedule.get_schedule_from_html()
+            page_parser = UneconParser(page.content)
+            lessons = page_parser.parse_page()
+            schedule = Schedule(lessons)
 
-            current_week = schedule.get_current_week_number()
+            current_week = page_parser.get_current_week_number()
 
             markup = create_change_week_markup(self.group, current_week)
             markup.add(telebot.types.InlineKeyboardButton(
@@ -32,12 +34,11 @@ class ResponseCreator:
             if schedule:
                 schedule_str = schedule.transform_schedule_to_str()
 
-                response.markup = markup
-                response.message = schedule_str
+                response.set_data(text=schedule_str, markup=markup)
             else:
-                response.message = "На эту неделю нет расписания"
+                response.text = "На эту неделю нет расписания"
         else:
-            response.message = "К расписанию нет доступа. Попробуйте позже"
+            response.text = "К расписанию нет доступа. Попробуйте позже"
 
         return response
 
@@ -46,8 +47,9 @@ class ResponseCreator:
         page = unecon_request(group=self.group)
 
         if page.status_code == 200:
-            schedule = Schedule(page.content)
-            schedule.get_schedule_from_html()
+            page_parser = UneconParser(page.content)
+            lessons = page_parser.parse_page()
+            schedule = Schedule(lessons)
 
             if schedule.lessons:
 
@@ -63,12 +65,11 @@ class ResponseCreator:
 
                 inline_response.add_item(this_week)
 
-                current_week_number = schedule.get_current_week_number()
+                current_week_number = page_parser.get_current_week_number()
                 next_week_page = unecon_request(group=12837, week=current_week_number + 1)
 
                 if next_week_page.status_code == 200:
-                    next_week_schedule = Schedule(next_week_page.content)
-                    next_week_schedule.get_schedule_from_html()
+                    next_week_schedule = Schedule.get_schedule_from_html(next_week_page.content)
                     next_week_schedule_str = next_week_schedule.transform_schedule_to_str()
                     next_week = telebot.types.InlineQueryResultArticle(
                         id="2",
@@ -79,13 +80,11 @@ class ResponseCreator:
                         )
                     )
                     inline_response.add_item(next_week)
-        else:
-            inline_response.is_success = False
 
         return inline_response
 
-    def form_on_button_click_response(self, btn_data: dict) -> ButtonClickResponse:
-        button_click_response = ButtonClickResponse()
+    def form_on_button_click_response(self, btn_data: dict) -> DefaultResponse:
+        button_click_response = DefaultResponse()
 
         callback_btn_type = None
         for btn_type in BtnTypes:
@@ -93,8 +92,7 @@ class ResponseCreator:
                 callback_btn_type = btn_type
 
         page = unecon_request(group=self.group, week=self.week)
-        schedule = Schedule(page.content)
-        schedule.get_schedule_from_html()
+        schedule = Schedule.get_schedule_from_html(page.content)
 
         if callback_btn_type == BtnTypes.CHANGE_WEEK:
             markup = create_change_week_markup(self.group, self.week)
@@ -104,11 +102,9 @@ class ResponseCreator:
             if schedule.lessons:
                 schedule_str = schedule.transform_schedule_to_str()
 
-                button_click_response.text = schedule_str
-                button_click_response.markup = markup
+                button_click_response.set_data(text=schedule_str, markup=markup)
             else:
-                button_click_response.text = "На эту неделю нет расписания"
-                button_click_response.markup = markup
+                button_click_response.set_data(text="На эту неделю нет расписания", markup=markup)
 
         elif callback_btn_type == BtnTypes.MORE:
             if schedule.lessons:
@@ -118,8 +114,7 @@ class ResponseCreator:
 
                 schedule_str = schedule.transform_schedule_to_str()
 
-                button_click_response.text = schedule_str
-                button_click_response.markup = markup
+                button_click_response.set_data(text=schedule_str, markup=markup)
 
         elif callback_btn_type == BtnTypes.GET_FULL_DAY:
             if schedule.lessons:
@@ -138,7 +133,6 @@ class ResponseCreator:
                             })
                     )
                 )
-                button_click_response.text = lessons_str
-                button_click_response.markup = markup
+                button_click_response.set_data(text=lessons_str, markup=markup)
 
         return button_click_response
