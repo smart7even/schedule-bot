@@ -7,7 +7,8 @@ from core.types.button import BtnTypes
 from core.types.response import DefaultResponse, InlineResponse
 from markup import create_change_week_markup, create_get_full_days_markup, mix_markups
 from request import unecon_request
-from schedule import Schedule, UneconParser
+from schedule import Schedule
+from parser import UneconParser
 
 
 class ResponseCreator:

@@ -66,4 +66,13 @@ def send_schedule_inline(query):
         bot.answer_inline_query(query.id, inline_response.items)
 
 
+@bot.message_handler(func=lambda message: True)
+def offer_help(message):
+    bot.send_message(
+        message.chat.id,
+        "Кажется такой команды нет, если нужна помощь, нажмите на /help",
+        reply_markup=keyboard_main
+    )
+
+
 bot.infinity_polling()
