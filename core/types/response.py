@@ -4,13 +4,16 @@ from abc import ABC, abstractmethod
 
 
 class Response(ABC):
+    """Абстрактный класс ответа на запрос пользователя"""
 
     @abstractmethod
     def is_success(self) -> bool:
+        """Метод, возвращающий состояние ответа: True, если ответ корректный, False, если ответ некорректный"""
         pass
 
 
 class DefaultResponse(Response):
+    """Класс ответа на команду /schedule"""
     def __init__(self):
         self.__text: Optional[str] = None
         self.__markup: Optional[InlineKeyboardMarkup] = None
@@ -48,6 +51,7 @@ class DefaultResponse(Response):
 
 
 class InlineResponse(Response):
+    """Класс ответа на inline команду @schedule_unecon_bot <команда>"""
     def __init__(self):
         self.__items: List[InlineQueryResultArticle] = []
 

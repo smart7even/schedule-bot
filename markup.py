@@ -9,6 +9,12 @@ keyboard_main.row("/schedule")
 
 
 def create_change_week_markup(group: int, week: int) -> InlineKeyboardMarkup:
+    """
+    Эта функция создает разметку с кнопками для перехода на предыдущую и следующую неделю расписания
+    :param group: id группы
+    :param week: номер недели от начала учебного года
+    :return: объект разметки telebot.types.InlineKeyboardMarkup
+    """
     markup = InlineKeyboardMarkup()
     markup.add(
         InlineKeyboardButton(text="Пред. Неделя", callback_data=json.dumps(
@@ -21,6 +27,13 @@ def create_change_week_markup(group: int, week: int) -> InlineKeyboardMarkup:
 
 
 def create_get_full_days_markup(schedule: List[Lesson], group: int, week: int) -> InlineKeyboardMarkup:
+    """
+    Эта функция создает разметку с кнопками для перехода к подробному расписанию на определенный день
+    :param schedule: объект Schedule
+    :param group: id группы
+    :param week: номер недели от начала учебного года
+    :return: объект разметки telebot.types.InlineKeyboardMarkup
+    """
     markup = InlineKeyboardMarkup()
     day = None
     day_count = 0
@@ -45,6 +58,11 @@ def create_get_full_days_markup(schedule: List[Lesson], group: int, week: int) -
 
 
 def mix_markups(*markups: InlineKeyboardMarkup) -> InlineKeyboardMarkup:
+    """
+    Соединяет объекты разметки в одну разметку
+    :param markups: объекты разметки InlineKeyboardMarkup
+    :return: объект разметки telebot.types.InlineKeyboardMarkup
+    """
     new_markup = InlineKeyboardMarkup()
 
     for markup in markups:

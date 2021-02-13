@@ -12,11 +12,18 @@ from site_parser import UneconParser
 
 
 class ResponseCreator:
+    """
+    Отвечает за создание ответа пользователю
+    """
     def __init__(self, group: int, week: Optional[int] = None):
         self.group = group
         self.week = week
 
     def form_response(self) -> DefaultResponse:
+        """
+        Формирует ответ на команду /schedule
+        :return: объект ответа DefaultResponse
+        """
         response = DefaultResponse()
         page = unecon_request(self.group, self.week)
 
@@ -44,6 +51,10 @@ class ResponseCreator:
         return response
 
     def form_inline_response(self) -> InlineResponse:
+        """
+        Формирует inline ответ при вызове бота в любом чате через "@schedule_unecon_bot <команда>"
+        :return:
+        """
         inline_response = InlineResponse()
         page = unecon_request(group=self.group)
 
@@ -70,7 +81,9 @@ class ResponseCreator:
                 next_week_page = unecon_request(group=12837, week=current_week_number + 1)
 
                 if next_week_page.status_code == 200:
-                    next_week_schedule = Schedule.get_schedule_from_html(next_week_page.content)
+                    next_page_parser = UneconParser(next_week_page.content)
+                    next_week_lessons = next_page_parser.parse_page()
+                    next_week_schedule = Schedule(next_week_lessons)
                     next_week_schedule_str = next_week_schedule.transform_schedule_to_str()
                     next_week = telebot.types.InlineQueryResultArticle(
                         id="2",
@@ -85,6 +98,11 @@ class ResponseCreator:
         return inline_response
 
     def form_on_button_click_response(self, btn_data: dict) -> DefaultResponse:
+        """
+        Формирует ответ бота при нажатии на кнопку
+        :param btn_data: callback_data кнопки
+        :return: объект ответа DefaultResponse
+        """
         button_click_response = DefaultResponse()
 
         callback_btn_type = None
@@ -93,7 +111,9 @@ class ResponseCreator:
                 callback_btn_type = btn_type
 
         page = unecon_request(group=self.group, week=self.week)
-        schedule = Schedule.get_schedule_from_html(page.content)
+        parser = UneconParser(page.content)
+        lessons = parser.parse_page()
+        schedule = Schedule(lessons)
 
         if callback_btn_type == BtnTypes.CHANGE_WEEK:
             markup = create_change_week_markup(self.group, self.week)

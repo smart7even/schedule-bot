@@ -1,14 +1,22 @@
 import re
 from bs4 import BeautifulSoup
+from typing import List
 
 from core.types.lesson import Lesson
 
 
 class UneconParser:
+    """
+    Парсер html с сайта расписания СПбГЭУ
+    """
     def __init__(self, html_content: bytes):
         self.html_content = html_content
 
-    def parse_page(self):
+    def parse_page(self) -> List[Lesson]:
+        """
+        Формирует список объектов Lesson
+        :return: список объектов Lesson
+        """
         soup = BeautifulSoup(self.html_content, features="html.parser")
         day = None
         week = None
@@ -45,6 +53,9 @@ class UneconParser:
         return lessons
 
     def get_current_week_number(self) -> int:
+        """
+        :return: номер недели расписания на html странице от начала учебного года
+        """
         soup = BeautifulSoup(self.html_content, features="html.parser")
 
         week = r"w=(\d{2})"
