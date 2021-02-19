@@ -3,20 +3,23 @@ from typing import Optional
 
 import telebot
 
-from core.types.button import BtnTypes
+from core.types.button import BtnTypes, ActionTypes
 from core.types.response import DefaultResponse, InlineResponse
 from markup import create_change_week_markup, create_get_full_days_markup, mix_markups
 from request import unecon_request
 from schedule import Schedule
 from site_parser import UneconParser
 
+from models import User
 
-class ResponseCreator:
+
+class ScheduleCreator:
     """
     Отвечает за создание ответа пользователю
     """
-    def __init__(self, group: int, week: Optional[int] = None):
-        self.group = group
+
+    def __init__(self, group_id: int, week: Optional[int] = None):
+        self.group = group_id
         self.week = week
 
     def form_response(self) -> DefaultResponse:
@@ -97,7 +100,7 @@ class ResponseCreator:
 
         return inline_response
 
-    def form_on_button_click_response(self, btn_data: dict) -> DefaultResponse:
+    def form_on_button_click_response(self, btn_data: dict, user_id: int) -> DefaultResponse:
         """
         Формирует ответ бота при нажатии на кнопку
         :param btn_data: callback_data кнопки
@@ -118,7 +121,12 @@ class ResponseCreator:
         if callback_btn_type == BtnTypes.CHANGE_WEEK:
             markup = create_change_week_markup(self.group, self.week)
             markup.add(telebot.types.InlineKeyboardButton(
-                "Больше", callback_data=json.dumps({"type": BtnTypes.MORE.name, "group": 12837, "week": self.week})))
+                "Больше", callback_data=json.dumps(
+                    {
+                        "type": BtnTypes.MORE.name,
+                        "group": self.group,
+                        "week": self.week
+                    })))
 
             if schedule.lessons:
                 schedule_str = schedule.transform_schedule_to_str()
@@ -157,3 +165,6 @@ class ResponseCreator:
                 button_click_response.set_data(text=lessons_str, markup=markup)
 
         return button_click_response
+
+
+

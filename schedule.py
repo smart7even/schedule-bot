@@ -20,12 +20,16 @@ class Schedule:
         day = None
         prev_lesson_time = None
         schedule_str = ""
+        is_new_day = None
         for lesson in self.lessons:
             if lesson.day != day or not day:
                 day = lesson.day
+                is_new_day = True
                 schedule_str += f"\n<b>{day} {lesson.day_of_week}</b>\n"
+            else:
+                is_new_day = False
 
-            if prev_lesson_time != lesson.time:
+            if prev_lesson_time != lesson.time or is_new_day:
                 if is_detail_mode:
                     schedule_str += "\n"
                 schedule_str += f"<b>{lesson.time}</b>\n{lesson.name}\n"

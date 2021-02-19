@@ -4,8 +4,8 @@ from core.types.button import BtnTypes
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup
 import json
 
-keyboard_main = ReplyKeyboardMarkup(True, True)
-keyboard_main.row("/schedule")
+keyboard_main = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
+keyboard_main.row("Все расписания", "Мое расписание", "Выбрать мою группу")
 
 
 def create_change_week_markup(group: int, week: int) -> InlineKeyboardMarkup:
