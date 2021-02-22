@@ -1,6 +1,8 @@
 from core.types.button import create_group_buttons, ActionTypes
+from core.types.response import DefaultResponse
 from models import User, Group
 from schedule_repsonse import ScheduleCreator
+from typing import Optional
 
 
 class ButtonActions:
@@ -22,7 +24,7 @@ class ButtonActions:
         pass
 
     @staticmethod
-    def get_courses(fakulty_id: int):
+    def get_courses(faculty_id: int):
         pass
 
     @staticmethod
@@ -30,14 +32,14 @@ class ButtonActions:
         pass
 
     @staticmethod
-    def get_schedule(group_id: int, week: int = None):
+    def get_schedule(group_id: int, week: Optional[int] = None) -> DefaultResponse:
         schedule_creator = ScheduleCreator(group_id, week)
         response = schedule_creator.form_response()
 
         return response
 
     @staticmethod
-    def get_my_schedule(user_id: int):
+    def get_my_schedule(user_id: int) -> DefaultResponse:
         user = User.get_user(user_id)
 
         response = ButtonActions.get_schedule(user.group_id)

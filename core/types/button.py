@@ -29,5 +29,3 @@ def create_group_buttons(group_list: List[Group], action: ActionTypes) -> Inline
         markup.add(button)
 
     return markup
-
-

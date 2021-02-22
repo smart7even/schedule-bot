@@ -3,8 +3,7 @@ import os
 import json
 import settings
 
-from sqlalchemy.orm import sessionmaker
-from models import engine, User, Group
+from models import Group, Session
 
 from schedule_repsonse import ScheduleCreator
 from markup import keyboard_main
@@ -19,9 +18,6 @@ telebot.logger.setLevel(logging.DEBUG)
 
 bot = telebot.TeleBot(os.getenv("SCHEDULE_BOT_TOKEN"))
 telebot.apihelper.SESSION_TIME_TO_LIVE = 5 * 60
-
-Session = sessionmaker()
-Session.configure(bind=engine)
 
 
 @bot.message_handler(commands=["start"])

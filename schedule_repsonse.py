@@ -3,14 +3,12 @@ from typing import Optional
 
 import telebot
 
-from core.types.button import BtnTypes, ActionTypes
+from core.types.button import BtnTypes
 from core.types.response import DefaultResponse, InlineResponse
 from markup import create_change_week_markup, create_get_full_days_markup, mix_markups
 from request import unecon_request
 from schedule import Schedule
 from site_parser import UneconParser
-
-from models import User
 
 
 class ScheduleCreator:
@@ -165,6 +163,3 @@ class ScheduleCreator:
                 button_click_response.set_data(text=lessons_str, markup=markup)
 
         return button_click_response
-
-
-

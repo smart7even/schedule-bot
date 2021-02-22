@@ -1,7 +1,6 @@
 from typing import List
 
 from core.types.lesson import Lesson
-from site_parser import UneconParser
 
 
 class Schedule:
