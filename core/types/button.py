@@ -1,7 +1,8 @@
 from enum import Enum
 from models import Group
 from typing import List
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 import json
 
@@ -20,12 +21,14 @@ class ActionTypes(Enum):
 
 
 def create_group_buttons(group_list: List[Group], action: ActionTypes) -> InlineKeyboardMarkup:
-    markup = InlineKeyboardMarkup()
+    markup_list = []
 
     for group in group_list:
         button = InlineKeyboardButton(group.name, callback_data=json.dumps({"type": BtnTypes.GROUP_BUTTON.name,
                                                                             "group_id": group.id,
                                                                             "action": action.value}))
-        markup.add(button)
+        markup_list.append([button])
+
+    markup = InlineKeyboardMarkup(markup_list)
 
     return markup

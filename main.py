@@ -1,87 +1,82 @@
-import telebot
 import os
 import json
 import settings
+from button_actions import ButtonActions
 
 from models import Group, Session
-
 from schedule_repsonse import ScheduleCreator
+
 from markup import keyboard_main
 
 import logging
 
+from telegram import Update
+from telegram.ext import (
+    Updater,
+    CallbackContext,
+    CommandHandler,
+    ConversationHandler,
+    Filters,
+    MessageHandler,
+    CallbackQueryHandler,
+    InlineQueryHandler
+)
+
 from core.types.button import create_group_buttons, ActionTypes, BtnTypes
-from button_actions import ButtonActions
-
-logger = telebot.logger
-telebot.logger.setLevel(logging.DEBUG)
-
-bot = telebot.TeleBot(os.getenv("SCHEDULE_BOT_TOKEN"))
-telebot.apihelper.SESSION_TIME_TO_LIVE = 5 * 60
 
 
-@bot.message_handler(commands=["start"])
-def send_welcome(message: telebot.types.Message):
+def send_welcome(update: Update, context: CallbackContext):
     with open("bot_answers/start.txt", "r", encoding="utf8") as start_text_file:
         start_message = start_text_file.read()
-        bot.send_message(
-            message.chat.id, start_message,
-            reply_markup=keyboard_main
-        )
+
+        update.message.reply_text(start_message, reply_markup=keyboard_main)
 
 
-@bot.message_handler(commands=["help"])
-def send_help(message: telebot.types.Message):
+def send_help(update: Update, context: CallbackContext):
     with open("bot_answers/help.txt", "r", encoding="utf8") as help_text_file:
         help_message = help_text_file.read()
-        bot.send_message(
-            message.chat.id,
-            help_message,
-            reply_markup=keyboard_main
-        )
+
+        update.message.reply_text(help_message, reply_markup=keyboard_main)
 
 
-@bot.message_handler(func=lambda message: message.text == "Все расписания" or message.text.startswith("/schedule"))
-def handle_schedule(message: telebot.types.Message):
-    text = bot.send_message(message.chat.id, "Введи название своей группы, например БИ-2002")
-    bot.register_next_step_handler(text, send_schedule)
+def handle_schedule(update: Update, context: CallbackContext):
+    update.message.reply_text("Введи название своей группы, например, БИ-2002")
+
+    return 1
 
 
-@bot.message_handler(func=lambda message: message.text == "Выбрать мою группу" or message.text.startswith("/set_group"))
-def set_group(message: telebot.types.Message):
-    # User.get_user(message.chat.id).set_group()
+def set_group(update: Update, context: CallbackContext):
     groups = Group.get_all()
 
     markup = create_group_buttons(groups, action=ActionTypes.SET_USER_GROUP)
 
-    bot.send_message(message.chat.id, text="Выбери свою группу", reply_markup=markup)
+    update.message.reply_text(text="Выбери свою группу", reply_markup=markup)
 
 
-def send_schedule(message: telebot.types.Message):
+def send_schedule(update: Update, context: CallbackContext):
     session = Session()
-    group_name = message.text
+    group_name = update.message.text
 
     group = session.query(Group).filter(Group.name == group_name).one_or_none()
 
     if group:
         group_id = group.id
-        send_schedule_handler(message, group_id)
+        response_creator = ScheduleCreator(group_id)
+        response = response_creator.form_response()
+        if response.is_success():
+            update.message.reply_text(response.text, reply_markup=response.markup, parse_mode="HTML")
     else:
-        bot.send_message(message.chat.id, "Группа не найдена")
+        update.message.reply_text("Группа не найдена")
 
     session.close()
 
-
-def send_schedule_handler(message: telebot.types.Message, group_id: int):
-    response_creator = ScheduleCreator(group_id)
-    response = response_creator.form_response()
-    if response.is_success():
-        bot.send_message(message.chat.id, response.text, reply_markup=response.markup, parse_mode="HTML")
+    return ConversationHandler.END
 
 
-@bot.callback_query_handler(func=lambda call: True)
-def handle_buttons(call: telebot.types.CallbackQuery):
-    btn_data = json.loads(call.data)
+def handle_buttons(update: Update, context: CallbackContext):
+    query = update.callback_query
+
+    btn_data = json.loads(query.data)
 
     callback_btn_type = None
     for btn_type in BtnTypes:
@@ -90,42 +85,62 @@ def handle_buttons(call: telebot.types.CallbackQuery):
 
     if callback_btn_type in (BtnTypes.CHANGE_WEEK, BtnTypes.GET_FULL_DAY, BtnTypes.MORE):
         response_creator = ScheduleCreator(group_id=btn_data["group"], week=btn_data["week"])
-        response = response_creator.form_on_button_click_response(btn_data, user_id=call.from_user.id)
+        response = response_creator.form_on_button_click_response(btn_data)
         if response.is_success():
-            bot.edit_message_text(chat_id=call.message.chat.id,
-                                  text=response.text,
-                                  message_id=call.message.message_id,
-                                  reply_markup=response.markup,
-                                  parse_mode='HTML')
+            query.edit_message_text(text=response.text, reply_markup=response.markup, parse_mode='HTML')
     elif callback_btn_type == BtnTypes.GROUP_BUTTON:
-        ButtonActions.set_group(btn_data["group_id"], call.from_user.id)
+        ButtonActions.set_group(btn_data["group_id"], query.from_user.id)
+
+    query.answer()
 
 
-@bot.message_handler(func=lambda message: message.text == "Мое расписание" or message.text.startswith("/my_schedule"))
-def send_user_schedule(message):
-    response = ButtonActions.get_my_schedule(message.chat.id)
+def send_user_schedule(update: Update, context: CallbackContext):
+    response = ButtonActions.get_my_schedule(update.message.from_user.id)
 
-    bot.send_message(chat_id=message.chat.id,
-                     text=response.text,
-                     reply_markup=response.markup,
-                     parse_mode='HTML')
-
-
-@bot.inline_handler(func=lambda query: len(query.query) > 0)
-def send_schedule_inline(query):
-    inline_response_creator = ScheduleCreator(group_id=12837)
-    inline_response = inline_response_creator.form_inline_response()
-    if inline_response.is_success():
-        bot.answer_inline_query(query.id, inline_response.items)
-
-
-@bot.message_handler(func=lambda message: True)
-def offer_help(message):
-    bot.send_message(
-        message.chat.id,
-        "Кажется такой команды нет, если нужна помощь, нажмите на /help",
-        reply_markup=keyboard_main
+    update.message.reply_text(
+        text=response.text,
+        reply_markup=response.markup,
+        parse_mode='HTML'
     )
 
 
-bot.infinity_polling()
+def send_schedule_inline(update: Update, context: CallbackContext):
+    inline_response_creator = ScheduleCreator(group_id=12837)
+    inline_response = inline_response_creator.form_inline_response()
+    if inline_response.is_success():
+        update.inline_query.answer(inline_response.items)
+
+
+def main():
+    updater = Updater(os.getenv("SCHEDULE_BOT_TOKEN"))
+
+    dispatcher = updater.dispatcher
+
+    dispatcher.add_handler(CommandHandler("start", send_welcome))
+    dispatcher.add_handler(CommandHandler("help", send_help))
+
+    dispatcher.add_handler(CommandHandler("set_group", set_group))
+    dispatcher.add_handler(MessageHandler(Filters.regex('Выбрать мою группу'), set_group))
+
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('schedule', handle_schedule),
+                      MessageHandler(Filters.regex("Все расписания"), handle_schedule)],
+        states={
+            1: [
+                MessageHandler(Filters.text, send_schedule)
+            ]
+        },
+        fallbacks=[]
+    )
+
+    dispatcher.add_handler(conv_handler)
+    dispatcher.add_handler(CallbackQueryHandler(handle_buttons))
+    dispatcher.add_handler(CommandHandler("my_schedule", send_user_schedule))
+    dispatcher.add_handler(MessageHandler(Filters.regex('Мое расписание'), send_user_schedule))
+    dispatcher.add_handler(InlineQueryHandler(send_schedule_inline))
+
+    updater.start_polling()
+
+
+if __name__ == "__main__":
+    main()

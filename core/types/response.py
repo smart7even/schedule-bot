@@ -1,5 +1,5 @@
 from typing import Optional, List
-from telebot.types import InlineKeyboardMarkup, InlineQueryResultArticle
+from telegram import InlineKeyboardMarkup, InlineQueryResultArticle
 from abc import ABC, abstractmethod
 
 

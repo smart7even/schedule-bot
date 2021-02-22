@@ -1,7 +1,7 @@
 import json
 from typing import Optional
 
-import telebot
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultArticle, InputTextMessageContent
 
 from core.types.button import BtnTypes
 from core.types.response import DefaultResponse, InlineResponse
@@ -35,10 +35,14 @@ class ScheduleCreator:
 
             current_week = page_parser.get_current_week_number()
 
-            markup = create_change_week_markup(self.group, current_week)
-            markup.add(telebot.types.InlineKeyboardButton(
+            change_week_markup = create_change_week_markup(self.group, current_week)
+            more_markup_button = InlineKeyboardButton(
                 "Больше",
-                callback_data=json.dumps({"type": BtnTypes.MORE.name, "group": self.group, "week": current_week})))
+                callback_data=json.dumps({"type": BtnTypes.MORE.name, "group": self.group, "week": current_week})
+            )
+            more_markup = InlineKeyboardMarkup([[more_markup_button]])
+
+            markup = mix_markups(change_week_markup, more_markup)
 
             if schedule:
                 schedule_str = schedule.transform_schedule_to_str()
@@ -67,10 +71,10 @@ class ScheduleCreator:
             if schedule.lessons:
 
                 schedule_str = schedule.transform_schedule_to_str()
-                this_week = telebot.types.InlineQueryResultArticle(
+                this_week = InlineQueryResultArticle(
                     id="1",
                     title="Расписание на эту неделю",
-                    input_message_content=telebot.types.InputTextMessageContent(
+                    input_message_content=InputTextMessageContent(
                         message_text=schedule_str,
                         parse_mode="HTML"
                     )
@@ -86,10 +90,10 @@ class ScheduleCreator:
                     next_week_lessons = next_page_parser.parse_page()
                     next_week_schedule = Schedule(next_week_lessons)
                     next_week_schedule_str = next_week_schedule.transform_schedule_to_str()
-                    next_week = telebot.types.InlineQueryResultArticle(
+                    next_week = InlineQueryResultArticle(
                         id="2",
                         title="Расписание на следующую неделю",
-                        input_message_content=telebot.types.InputTextMessageContent(
+                        input_message_content=InputTextMessageContent(
                             message_text=next_week_schedule_str,
                             parse_mode="HTML"
                         )
@@ -98,7 +102,7 @@ class ScheduleCreator:
 
         return inline_response
 
-    def form_on_button_click_response(self, btn_data: dict, user_id: int) -> DefaultResponse:
+    def form_on_button_click_response(self, btn_data: dict) -> DefaultResponse:
         """
         Формирует ответ бота при нажатии на кнопку
         :param btn_data: callback_data кнопки
@@ -117,14 +121,18 @@ class ScheduleCreator:
         schedule = Schedule(lessons)
 
         if callback_btn_type == BtnTypes.CHANGE_WEEK:
-            markup = create_change_week_markup(self.group, self.week)
-            markup.add(telebot.types.InlineKeyboardButton(
-                "Больше", callback_data=json.dumps(
+            change_week_markup = create_change_week_markup(self.group, self.week)
+            more_markup_button = InlineKeyboardButton(
+                "Больше",
+                callback_data=json.dumps(
                     {
                         "type": BtnTypes.MORE.name,
                         "group": self.group,
                         "week": self.week
-                    })))
+                    })
+            )
+            more_markup = InlineKeyboardMarkup([[more_markup_button]])
+            markup = mix_markups(change_week_markup, more_markup)
 
             if schedule.lessons:
                 schedule_str = schedule.transform_schedule_to_str()
@@ -148,9 +156,8 @@ class ScheduleCreator:
                 lessons_at_this_day = schedule.get_info_about_day(btn_data["day"])
                 schedule_at_this_day = Schedule(lessons=lessons_at_this_day)
                 lessons_str = schedule_at_this_day.transform_schedule_to_str(is_detail_mode=True)
-                markup = telebot.types.InlineKeyboardMarkup()
-                markup.add(
-                    telebot.types.InlineKeyboardButton(
+                markup = InlineKeyboardMarkup([[
+                    InlineKeyboardButton(
                         "Назад к расписанию недели",
                         callback_data=json.dumps(
                             {
@@ -159,7 +166,8 @@ class ScheduleCreator:
                                 "week": self.week
                             })
                     )
-                )
+                ]])
+
                 button_click_response.set_data(text=lessons_str, markup=markup)
 
         return button_click_response
