@@ -12,6 +12,11 @@ class ButtonActions:
         user = User.get_user(user_id)
         user.set_group(group_id)
 
+        response = DefaultResponse()
+        response.text = Group.get_group_by_id(group_id).name
+
+        return response
+
     @staticmethod
     def get_group_choice_form():
         groups = Group.get_all()

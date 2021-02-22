@@ -30,6 +30,16 @@ class Group(Base):
     course = Column(Integer)
 
     @staticmethod
+    def get_group_by_id(group_id: int):
+        session = Session()
+
+        group = session.query(Group).filter(Group.id == group_id).one()
+
+        session.close()
+
+        return group
+
+    @staticmethod
     def get_all():
         session = Session()
 

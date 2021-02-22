@@ -39,6 +39,10 @@ def send_help(update: Update, context: CallbackContext):
         update.message.reply_text(help_message, reply_markup=keyboard_main)
 
 
+def offer_help(update: Update, context: CallbackContext):
+    update.message.reply_text("Кажется, такой команды нет. Если нужна помощь, то нажми на /help")
+
+
 def handle_schedule(update: Update, context: CallbackContext):
     update.message.reply_text("Введи название своей группы, например, БИ-2002")
 
@@ -89,7 +93,8 @@ def handle_buttons(update: Update, context: CallbackContext):
         if response.is_success():
             query.edit_message_text(text=response.text, reply_markup=response.markup, parse_mode='HTML')
     elif callback_btn_type == BtnTypes.GROUP_BUTTON:
-        ButtonActions.set_group(btn_data["group_id"], query.from_user.id)
+        response = ButtonActions.set_group(btn_data["group_id"], query.from_user.id)
+        query.answer(text=f"Группа {response.text} установлена!")
 
     query.answer()
 
@@ -138,6 +143,7 @@ def main():
     dispatcher.add_handler(CommandHandler("my_schedule", send_user_schedule))
     dispatcher.add_handler(MessageHandler(Filters.regex('Мое расписание'), send_user_schedule))
     dispatcher.add_handler(InlineQueryHandler(send_schedule_inline))
+    dispatcher.add_handler(MessageHandler(Filters.text, offer_help))
 
     updater.start_polling()
 
