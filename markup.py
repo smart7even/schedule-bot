@@ -1,9 +1,11 @@
 from typing import List
 from core.types.lesson import Lesson
-from core.types.button import BtnTypes
+from core.types.button import BtnTypes, ActionTypes
 import json
 
 from telegram import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+
+from models import Group, Faculty
 
 keyboard_main = ReplyKeyboardMarkup(
     [
@@ -86,3 +88,46 @@ def mix_markups(*markups: InlineKeyboardMarkup) -> InlineKeyboardMarkup:
     new_markup = InlineKeyboardMarkup(new_markup_list)
 
     return new_markup
+
+
+def create_group_buttons(group_list: List[Group], action: ActionTypes) -> InlineKeyboardMarkup:
+    markup_list = []
+
+    for group in group_list:
+        button = InlineKeyboardButton(group.name, callback_data=json.dumps({"type": BtnTypes.GROUP_BTN.name,
+                                                                            "group_id": group.id,
+                                                                            "action": action.value}))
+        markup_list.append([button])
+
+    markup = InlineKeyboardMarkup(markup_list)
+
+    return markup
+
+
+def create_faculty_buttons(faculties_list: List[Faculty], action: ActionTypes) -> InlineKeyboardMarkup:
+    markup_list = []
+
+    for faculty in faculties_list:
+        button = InlineKeyboardButton(faculty.name, callback_data=json.dumps({"type": BtnTypes.FACULTY_BTN.name,
+                                                                              "f_id": faculty.id,
+                                                                              "action": action.value}))
+        markup_list.append([button])
+
+    markup = InlineKeyboardMarkup(markup_list)
+
+    return markup
+
+
+def create_course_buttons(course_list: List[int], faculty_id: int, action: ActionTypes) -> InlineKeyboardMarkup:
+    markup_list = []
+
+    for course in course_list:
+        button = InlineKeyboardButton(str(course), callback_data=json.dumps({"type": BtnTypes.COURSE_BTN.name,
+                                                                             "f_id": faculty_id,
+                                                                             "c_id": course,
+                                                                             "action": action.value}))
+        markup_list.append([button])
+
+    markup = InlineKeyboardMarkup(markup_list)
+
+    return markup

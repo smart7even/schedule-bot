@@ -17,6 +17,16 @@ class Faculty(Base):
 
     groups = relationship("Group")
 
+    @staticmethod
+    def get_all():
+        session = Session()
+
+        faculties = session.query(Faculty).all()
+
+        session.close()
+
+        return faculties
+
     def get_groups(self):
         return self.groups
 
@@ -44,6 +54,29 @@ class Group(Base):
         session = Session()
 
         groups = session.query(Group).all()
+
+        session.close()
+
+        return groups
+
+    @staticmethod
+    def get_courses_in_faculty(faculty_id: int):
+        session = Session()
+
+        courses = session.query(Group.course).filter(Group.faculty_id == faculty_id).distinct().all()
+
+        session.close()
+
+        courses = list(map(lambda wrapped_list: wrapped_list[0], courses))
+        courses.sort()
+
+        return courses
+
+    @staticmethod
+    def get_groups_by_faculty_and_course(faculty_id: int, course: int):
+        session = Session()
+
+        groups = session.query(Group).filter(Group.faculty_id == faculty_id, Group.course == course).all()
 
         session.close()
 

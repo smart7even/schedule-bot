@@ -31,7 +31,8 @@ class UneconParser:
 
                 lesson_day = day
                 lesson_day_of_week = week
-                lesson_name = tr.find("span", {"class": "predmet"}).string
+                lesson_name_tr = tr.find("span", {"class": "predmet"})
+                lesson_name = lesson_name_tr.text
                 lesson_time = tr.find("span", {"class": "time"}).string
                 lesson_professor_span = tr.find("span", {"class": "prepod"})
                 if lesson_professor_span.a:

@@ -1,8 +1,11 @@
-from core.types.button import create_group_buttons, ActionTypes
+from core.types.button import ActionTypes
+from markup import create_group_buttons, create_faculty_buttons, create_course_buttons
 from core.types.response import DefaultResponse
-from models import User, Group
+from models import User, Group, Faculty
 from schedule_repsonse import ScheduleCreator
 from typing import Optional
+
+from telegram import InlineKeyboardMarkup
 
 
 class ButtonActions:
@@ -18,23 +21,26 @@ class ButtonActions:
         return response
 
     @staticmethod
-    def get_group_choice_form():
-        groups = Group.get_all()
-        markup = create_group_buttons(groups, action=ActionTypes.SET_USER_GROUP)
+    def get_faculties_choice_form(action) -> InlineKeyboardMarkup:
+        faculties = Faculty.get_all()
+        markup = create_faculty_buttons(faculties, action)
 
         return markup
 
     @staticmethod
-    def get_groups(faculty_id: int, course: int):
-        pass
+    def get_courses_choice_form(faculty_id, action) -> InlineKeyboardMarkup:
+        courses = Group.get_courses_in_faculty(faculty_id)
+        print(courses)
+        markup = create_course_buttons(courses, faculty_id, action)
+
+        return markup
 
     @staticmethod
-    def get_courses(faculty_id: int):
-        pass
+    def get_group_choice_form(faculty_id, course, action) -> InlineKeyboardMarkup:
+        groups = Group.get_groups_by_faculty_and_course(faculty_id, course)
+        markup = create_group_buttons(groups, action)
 
-    @staticmethod
-    def get_faculty():
-        pass
+        return markup
 
     @staticmethod
     def get_schedule(group_id: int, week: Optional[int] = None) -> DefaultResponse:
@@ -44,7 +50,7 @@ class ButtonActions:
         return response
 
     @staticmethod
-    def get_my_schedule(user_id: int) -> DefaultResponse:
+    def get_user_schedule(user_id: int) -> DefaultResponse:
         user = User.get_user(user_id)
 
         response = ButtonActions.get_schedule(user.group_id)

@@ -2,11 +2,12 @@ import os
 import json
 import settings
 from button_actions import ButtonActions
+from core.types.response import DefaultResponse
 
 from models import Group, Session
 from schedule_repsonse import ScheduleCreator
 
-from markup import keyboard_main
+from markup import keyboard_main, create_group_buttons
 
 import logging
 
@@ -22,7 +23,7 @@ from telegram.ext import (
     InlineQueryHandler
 )
 
-from core.types.button import create_group_buttons, ActionTypes, BtnTypes
+from core.types.button import ActionTypes, BtnTypes
 
 
 def send_welcome(update: Update, context: CallbackContext):
@@ -49,12 +50,18 @@ def handle_schedule(update: Update, context: CallbackContext):
     return 1
 
 
+def handle_schedule_menu(update: Update, context: CallbackContext):
+    response = DefaultResponse()
+    response.text = "Выберите факультет"
+    response.markup = ButtonActions.get_faculties_choice_form(ActionTypes.GET_SCHEDULE)
+
+    update.message.reply_text(text=response.text, reply_markup=response.markup)
+
+
 def set_group(update: Update, context: CallbackContext):
-    groups = Group.get_all()
+    markup = ButtonActions.get_faculties_choice_form(ActionTypes.SET_USER_GROUP)
 
-    markup = create_group_buttons(groups, action=ActionTypes.SET_USER_GROUP)
-
-    update.message.reply_text(text="Выбери свою группу", reply_markup=markup)
+    update.message.reply_text(text="Выбери факультет", reply_markup=markup)
 
 
 def send_schedule(update: Update, context: CallbackContext):
@@ -87,20 +94,46 @@ def handle_buttons(update: Update, context: CallbackContext):
         if btn_type.name == btn_data["type"]:
             callback_btn_type = btn_type
 
+    callback_action_type = None
+    if "action" in btn_data:
+        for action_type in ActionTypes:
+            if action_type.value == btn_data["action"]:
+                callback_action_type = action_type
+
     if callback_btn_type in (BtnTypes.CHANGE_WEEK, BtnTypes.GET_FULL_DAY, BtnTypes.MORE):
         response_creator = ScheduleCreator(group_id=btn_data["group"], week=btn_data["week"])
         response = response_creator.form_on_button_click_response(btn_data)
         if response.is_success():
             query.edit_message_text(text=response.text, reply_markup=response.markup, parse_mode='HTML')
-    elif callback_btn_type == BtnTypes.GROUP_BUTTON:
-        response = ButtonActions.set_group(btn_data["group_id"], query.from_user.id)
-        query.answer(text=f"Группа {response.text} установлена!")
+    elif callback_btn_type == BtnTypes.GROUP_BTN:
 
+        if callback_action_type == ActionTypes.SET_USER_GROUP:
+            response = ButtonActions.set_group(btn_data["group_id"], query.from_user.id)
+            query.answer(text=f"Группа {response.text} установлена!")
+        elif callback_action_type == ActionTypes.GET_SCHEDULE:
+            response = ButtonActions.get_schedule(btn_data["group_id"])
+            if response.is_success():
+                query.edit_message_text(text=response.text, reply_markup=response.markup, parse_mode="html")
+            else:
+                query.edit_message_text(text="Похоже на эту неделю нет расписания", reply_markup=response.markup)
+    elif callback_btn_type == BtnTypes.FACULTY_BTN:
+        response = DefaultResponse()
+        response.markup = ButtonActions.get_courses_choice_form(btn_data["f_id"], callback_action_type)
+        response.text = "Выберите курс"
+
+        query.edit_message_text(text=response.text, reply_markup=response.markup)
+    elif callback_btn_type == BtnTypes.COURSE_BTN:
+
+        response = DefaultResponse()
+        response.markup = ButtonActions.get_group_choice_form(btn_data["f_id"], btn_data["c_id"], callback_action_type)
+        response.text = "Выберите группу"
+
+        query.edit_message_text(text=response.text, reply_markup=response.markup, parse_mode="html")
     query.answer()
 
 
 def send_user_schedule(update: Update, context: CallbackContext):
-    response = ButtonActions.get_my_schedule(update.message.from_user.id)
+    response = ButtonActions.get_user_schedule(update.message.from_user.id)
 
     update.message.reply_text(
         text=response.text,
@@ -128,8 +161,7 @@ def main():
     dispatcher.add_handler(MessageHandler(Filters.regex('Выбрать мою группу'), set_group))
 
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('schedule', handle_schedule),
-                      MessageHandler(Filters.regex("Все расписания"), handle_schedule)],
+        entry_points=[CommandHandler('schedule', handle_schedule)],
         states={
             1: [
                 MessageHandler(Filters.text, send_schedule)
@@ -138,6 +170,7 @@ def main():
         fallbacks=[]
     )
 
+    dispatcher.add_handler(MessageHandler(Filters.regex("Все расписания"), handle_schedule_menu))
     dispatcher.add_handler(conv_handler)
     dispatcher.add_handler(CallbackQueryHandler(handle_buttons))
     dispatcher.add_handler(CommandHandler("my_schedule", send_user_schedule))

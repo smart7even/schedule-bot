@@ -14,13 +14,18 @@ def fill_groups(faculty: int, course: int):
 
     groups = soup.find("div", {"class": "grps"})
 
-    session = Session()
-    for group in groups.find_all("a"):
-        new_group = Group(id=group["href"].split("=")[-1], name=group.string, faculty_id=faculty, course=course)
-        session.add(new_group)
+    if groups:
+        session = Session()
+        try:
+            for group in groups.find_all("a"):
+                new_group = Group(id=group["href"].split("=")[-1], name=group.string, faculty_id=faculty, course=course)
+                session.add(new_group)
 
-    session.commit()
-    session.close()
+            session.commit()
+        except Exception as e:
+            print(e)
+        finally:
+            session.close()
 
 
 def fill_faculties():
@@ -40,5 +45,32 @@ def fill_faculties():
     session.close()
 
 
+def get_faculty_courses(faculty_id: int):
+    courses = []
+
+    page = requests.get("https://rasp.unecon.ru", {"fakultet": faculty_id})
+
+    soup = BeautifulSoup(page.content, features="html.parser")
+
+    faculties = soup.find("div", {"class": "kurses"})
+
+    for course in faculties.find_all("a"):
+        courses.append(course["data-kurs"])
+
+    return courses
+
+
+def fill_all_groups():
+    session = Session()
+
+    for faculty in session.query(Faculty).all():
+        faculty_courses = get_faculty_courses(faculty.id)
+
+        for course in faculty_courses:
+            fill_groups(faculty.id, course)
+
+    session.close()
+
+
 if __name__ == "__main__":
-    fill_groups(faculty=22, course=1)
+    fill_all_groups()
