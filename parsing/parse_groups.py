@@ -87,4 +87,4 @@ def fill_all_groups():
 
 
 if __name__ == "__main__":
-    fill_groups(faculty=28, course=5)
+    fill_all_groups()

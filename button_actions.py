@@ -45,8 +45,12 @@ class ButtonActions:
     @staticmethod
     def get_schedule(group_id: int, week: Optional[int] = None) -> DefaultResponse:
         group = Group.get_group_by_id(group_id)
-        schedule_creator = ScheduleCreator(group_id, week)
-        response = schedule_creator.form_response(group.name)
+
+        if group:
+            schedule_creator = ScheduleCreator(group_id, week)
+            response = schedule_creator.form_response(group.name)
+        else:
+            response = DefaultResponse()
 
         return response
 

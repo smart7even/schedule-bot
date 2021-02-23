@@ -42,7 +42,7 @@ class DefaultResponse(Response):
         if type(value) == InlineKeyboardMarkup:
             self.__markup = value
         else:
-            raise ValueError(f"Expected InlineKeyboardMarkup but got {type(value)}")
+            raise ValueError(f"Expected telegram.InlineKeyboardMarkup but got {type(value)}")
 
     def is_success(self) -> bool:
         if self.__text:
@@ -63,7 +63,7 @@ class InlineResponse(Response):
         if type(inline_item) == InlineQueryResultArticle:
             self.__items.append(inline_item)
         else:
-            raise ValueError(f"Expected InlineQueryResultArticle but got {type(inline_item)}")
+            raise ValueError(f"Expected telegram.InlineQueryResultArticle but got {type(inline_item)}")
 
     def is_success(self) -> bool:
         if self.__items:

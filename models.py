@@ -43,7 +43,7 @@ class Group(Base):
     def get_group_by_id(group_id: int):
         session = Session()
 
-        group = session.query(Group).filter(Group.id == group_id).one()
+        group = session.query(Group).filter(Group.id == group_id).one_or_none()
 
         session.close()
 

@@ -53,7 +53,7 @@ def create_more_markup(group_id: int, week: int):
 def create_get_full_days_markup(schedule: List[Lesson], group: int, week: int) -> InlineKeyboardMarkup:
     """
     Эта функция создает разметку с кнопками для перехода к подробному расписанию на определенный день
-    :param schedule: объект Schedule
+    :param schedule: список объектов Lesson
     :param group: id группы
     :param week: номер недели от начала учебного года
     :return: объект разметки telegram.InlineKeyboardMarkup
@@ -102,11 +102,7 @@ def create_schedule_unfolded_markup(schedule: List[Lesson], group_id: int, week:
 
 
 def mix_markups(*markups: InlineKeyboardMarkup) -> InlineKeyboardMarkup:
-    """
-    Соединяет объекты разметки в одну разметку
-    :param markups: объекты разметки InlineKeyboardMarkup
-    :return: объект разметки InlineKeyboardMarkup
-    """
+    """Соединяет объекты разметки в одну разметку"""
     new_markup_list = []
 
     for markup in markups:

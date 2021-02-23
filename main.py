@@ -30,6 +30,8 @@ def send_welcome(update: Update, context: CallbackContext):
 
         update.message.reply_text(start_message, reply_markup=keyboard_main)
 
+    send_help(update, context)
+
 
 def send_help(update: Update, context: CallbackContext):
     with open("bot_answers/help.txt", "r", encoding="utf8") as help_text_file:
@@ -59,7 +61,7 @@ def handle_schedule_menu(update: Update, context: CallbackContext):
 def set_group(update: Update, context: CallbackContext):
     markup = ButtonActions.get_faculties_choice_form(ActionTypes.SET_USER_GROUP)
 
-    update.message.reply_text(text="Выбери факультет", reply_markup=markup)
+    update.message.reply_text(text="Выберите факультет", reply_markup=markup)
 
 
 def send_schedule(update: Update, context: CallbackContext):
@@ -133,6 +135,9 @@ def handle_buttons(update: Update, context: CallbackContext):
 def send_user_schedule(update: Update, context: CallbackContext):
     response = ButtonActions.get_user_schedule(update.message.from_user.id)
 
+    if not response.is_success():
+        response.text = "Вы не выбрали группу. Нажмите на /set_group и выберите свою группу"
+
     update.message.reply_text(
         text=response.text,
         reply_markup=response.markup,
@@ -158,21 +163,14 @@ def main():
     dispatcher.add_handler(CommandHandler("set_group", set_group))
     dispatcher.add_handler(MessageHandler(Filters.regex('Выбрать мою группу'), set_group))
 
-    conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('schedule', handle_schedule)],
-        states={
-            1: [
-                MessageHandler(Filters.text, send_schedule)
-            ]
-        },
-        fallbacks=[]
-    )
-
+    dispatcher.add_handler(CommandHandler("schedule", handle_schedule_menu))
     dispatcher.add_handler(MessageHandler(Filters.regex("Все расписания"), handle_schedule_menu))
-    dispatcher.add_handler(conv_handler)
-    dispatcher.add_handler(CallbackQueryHandler(handle_buttons))
+
     dispatcher.add_handler(CommandHandler("my_schedule", send_user_schedule))
     dispatcher.add_handler(MessageHandler(Filters.regex('Мое расписание'), send_user_schedule))
+
+    dispatcher.add_handler(CallbackQueryHandler(handle_buttons))
+
     dispatcher.add_handler(InlineQueryHandler(send_schedule_inline))
     dispatcher.add_handler(MessageHandler(Filters.text, offer_help))
 

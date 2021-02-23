@@ -16,8 +16,6 @@ class Schedule:
                                   is_detail_mode=False) -> str:
         """
         Создает из списка объектов Lesson их строковое представление для отправки пользователю
-        :param is_detail_mode: режим отображения подробной информации
-        :return: строковое представление расписания
         """
         day = None
         prev_lesson_time = None
