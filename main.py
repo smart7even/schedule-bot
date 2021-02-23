@@ -7,9 +7,7 @@ from core.types.response import DefaultResponse
 from models import Group, Session
 from schedule_repsonse import ScheduleCreator
 
-from markup import keyboard_main, create_group_buttons
-
-import logging
+from markup import keyboard_main
 
 from telegram import Update
 from telegram.ext import (
@@ -73,7 +71,7 @@ def send_schedule(update: Update, context: CallbackContext):
     if group:
         group_id = group.id
         response_creator = ScheduleCreator(group_id)
-        response = response_creator.form_response()
+        response = response_creator.form_response(group_name)
         if response.is_success():
             update.message.reply_text(response.text, reply_markup=response.markup, parse_mode="HTML")
     else:

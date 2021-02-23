@@ -40,6 +40,16 @@ def create_change_week_markup(group: int, week: int) -> InlineKeyboardMarkup:
     return markup
 
 
+def create_more_markup(group_id: int, week: int):
+    more_markup_button = InlineKeyboardButton(
+        "Больше",
+        callback_data=json.dumps({"type": BtnTypes.MORE.name, "group": group_id, "week": week})
+    )
+    more_markup = InlineKeyboardMarkup([[more_markup_button]])
+
+    return more_markup
+
+
 def create_get_full_days_markup(schedule: List[Lesson], group: int, week: int) -> InlineKeyboardMarkup:
     """
     Эта функция создает разметку с кнопками для перехода к подробному расписанию на определенный день
@@ -73,11 +83,29 @@ def create_get_full_days_markup(schedule: List[Lesson], group: int, week: int) -
     return markup
 
 
+def create_schedule_folded_markup(group: int, week: int) -> InlineKeyboardMarkup:
+    change_week_markup = create_change_week_markup(group, week)
+    more_markup = create_more_markup(group, week)
+
+    markup = mix_markups(change_week_markup, more_markup)
+
+    return markup
+
+
+def create_schedule_unfolded_markup(schedule: List[Lesson], group_id: int, week: int):
+    change_week_markup = create_change_week_markup(group_id, week)
+    get_full_days_markup = create_get_full_days_markup(schedule, group_id, week)
+
+    markup = mix_markups(change_week_markup, get_full_days_markup)
+
+    return markup
+
+
 def mix_markups(*markups: InlineKeyboardMarkup) -> InlineKeyboardMarkup:
     """
     Соединяет объекты разметки в одну разметку
     :param markups: объекты разметки InlineKeyboardMarkup
-    :return: объект разметки telebot.types.InlineKeyboardMarkup
+    :return: объект разметки InlineKeyboardMarkup
     """
     new_markup_list = []
 

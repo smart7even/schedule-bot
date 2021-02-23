@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from core.types.lesson import Lesson
 
@@ -10,7 +10,10 @@ class Schedule:
     def __init__(self, lessons: List[Lesson]):
         self.lessons = lessons
 
-    def transform_schedule_to_str(self, is_detail_mode=False) -> str:
+    def transform_schedule_to_str(self,
+                                  group_name: Optional[str] = None,
+                                  week: Optional[int] = None,
+                                  is_detail_mode=False) -> str:
         """
         Создает из списка объектов Lesson их строковое представление для отправки пользователю
         :param is_detail_mode: режим отображения подробной информации
@@ -20,6 +23,13 @@ class Schedule:
         prev_lesson_time = None
         schedule_str = ""
         is_new_day = None
+
+        if group_name:
+            schedule_str += f"<b>{group_name}</b>\n"
+
+        if week:
+            schedule_str += f"<b>Неделя {week}</b>\n"
+
         for lesson in self.lessons:
             if lesson.day != day or not day:
                 day = lesson.day

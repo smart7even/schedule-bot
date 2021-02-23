@@ -5,10 +5,15 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResu
 
 from core.types.button import BtnTypes
 from core.types.response import DefaultResponse, InlineResponse
-from markup import create_change_week_markup, create_get_full_days_markup, mix_markups
+from markup import (
+    create_schedule_folded_markup,
+    create_schedule_unfolded_markup,
+)
 from request import unecon_request
 from schedule import Schedule
 from site_parser import UneconParser
+
+from models import Group
 
 
 class ScheduleCreator:
@@ -20,7 +25,7 @@ class ScheduleCreator:
         self.group = group_id
         self.week = week
 
-    def form_response(self) -> DefaultResponse:
+    def form_response(self, group_name: Optional[str] = None) -> DefaultResponse:
         """
         Формирует ответ на команду /schedule
         :return: объект ответа DefaultResponse
@@ -35,17 +40,10 @@ class ScheduleCreator:
 
             current_week = page_parser.get_current_week_number()
 
-            change_week_markup = create_change_week_markup(self.group, current_week)
-            more_markup_button = InlineKeyboardButton(
-                "Больше",
-                callback_data=json.dumps({"type": BtnTypes.MORE.name, "group": self.group, "week": current_week})
-            )
-            more_markup = InlineKeyboardMarkup([[more_markup_button]])
-
-            markup = mix_markups(change_week_markup, more_markup)
+            markup = create_schedule_folded_markup(self.group, current_week)
 
             if schedule:
-                schedule_str = schedule.transform_schedule_to_str()
+                schedule_str = schedule.transform_schedule_to_str(group_name=group_name, week=current_week)
 
                 response.set_data(text=schedule_str, markup=markup)
             else:
@@ -121,21 +119,11 @@ class ScheduleCreator:
         schedule = Schedule(lessons)
 
         if callback_btn_type == BtnTypes.CHANGE_WEEK:
-            change_week_markup = create_change_week_markup(self.group, self.week)
-            more_markup_button = InlineKeyboardButton(
-                "Больше",
-                callback_data=json.dumps(
-                    {
-                        "type": BtnTypes.MORE.name,
-                        "group": self.group,
-                        "week": self.week
-                    })
-            )
-            more_markup = InlineKeyboardMarkup([[more_markup_button]])
-            markup = mix_markups(change_week_markup, more_markup)
+            markup = create_schedule_folded_markup(self.group, self.week)
 
             if schedule.lessons:
-                schedule_str = schedule.transform_schedule_to_str()
+                group = Group.get_group_by_id(self.group)
+                schedule_str = schedule.transform_schedule_to_str(group_name=group.name, week=self.week)
 
                 button_click_response.set_data(text=schedule_str, markup=markup)
             else:
@@ -143,9 +131,7 @@ class ScheduleCreator:
 
         elif callback_btn_type == BtnTypes.MORE:
             if schedule.lessons:
-                buttons_markup = create_change_week_markup(self.group, self.week)
-                get_full_days_markup = create_get_full_days_markup(schedule.lessons, self.group, self.week)
-                markup = mix_markups(buttons_markup, get_full_days_markup)
+                markup = create_schedule_unfolded_markup(schedule.lessons, self.group, self.week)
 
                 schedule_str = schedule.transform_schedule_to_str()
 
