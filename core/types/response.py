@@ -7,13 +7,14 @@ class Response(ABC):
     """Абстрактный класс ответа на запрос пользователя"""
 
     @abstractmethod
-    def is_success(self) -> bool:
+    def is_valid(self) -> bool:
         """Метод, возвращающий состояние ответа: True, если ответ корректный, False, если ответ некорректный"""
         pass
 
 
 class DefaultResponse(Response):
     """Класс ответа на команду /schedule"""
+
     def __init__(self):
         self.__text: Optional[str] = None
         self.__markup: Optional[InlineKeyboardMarkup] = None
@@ -44,7 +45,7 @@ class DefaultResponse(Response):
         else:
             raise ValueError(f"Expected telegram.InlineKeyboardMarkup but got {type(value)}")
 
-    def is_success(self) -> bool:
+    def is_valid(self) -> bool:
         if self.__text:
             return True
         return False
@@ -52,6 +53,7 @@ class DefaultResponse(Response):
 
 class InlineResponse(Response):
     """Класс ответа на inline команду @schedule_unecon_bot <команда>"""
+
     def __init__(self):
         self.__items: List[InlineQueryResultArticle] = []
 
@@ -65,7 +67,28 @@ class InlineResponse(Response):
         else:
             raise ValueError(f"Expected telegram.InlineQueryResultArticle but got {type(inline_item)}")
 
-    def is_success(self) -> bool:
+    def is_valid(self) -> bool:
         if self.__items:
+            return True
+        return False
+
+
+class AnswerResponse(Response):
+    def __init__(self):
+        self.__text: Optional[str] = None
+
+    @property
+    def text(self):
+        return self.__text
+
+    @text.setter
+    def text(self, value: str):
+        if type(value) == str:
+            self.__text = value
+        else:
+            raise ValueError(f"Expected str but got {type(value)}")
+
+    def is_valid(self) -> bool:
+        if self.__text:
             return True
         return False

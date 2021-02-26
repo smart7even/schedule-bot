@@ -1,19 +1,11 @@
-import json
 from typing import Optional
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultArticle, InputTextMessageContent
-
-from core.types.button import BtnTypes
+from telegram import InlineQueryResultArticle, InputTextMessageContent
 from core.types.response import DefaultResponse, InlineResponse
-from markup import (
-    create_schedule_folded_markup,
-    create_schedule_unfolded_markup,
-)
+from markup import create_schedule_folded_markup
 from request import unecon_request
 from schedule import Schedule
 from site_parser import UneconParser
-
-from models import Group
 
 
 class ScheduleCreator:
@@ -22,7 +14,7 @@ class ScheduleCreator:
     """
 
     def __init__(self, group_id: int, week: Optional[int] = None):
-        self.group = group_id
+        self.group_id = group_id
         self.week = week
 
     def form_response(self, group_name: Optional[str] = None) -> DefaultResponse:
@@ -31,7 +23,7 @@ class ScheduleCreator:
         :return: объект ответа DefaultResponse
         """
         response = DefaultResponse()
-        page = unecon_request(self.group, self.week)
+        page = unecon_request(self.group_id, self.week)
 
         if page.status_code == 200:
             page_parser = UneconParser(page.content)
@@ -40,7 +32,7 @@ class ScheduleCreator:
 
             current_week = page_parser.get_current_week_number()
 
-            markup = create_schedule_folded_markup(self.group, current_week)
+            markup = create_schedule_folded_markup(self.group_id, current_week)
 
             if schedule:
                 schedule_str = schedule.transform_schedule_to_str(group_name=group_name, week=current_week)
@@ -59,7 +51,7 @@ class ScheduleCreator:
         :return:
         """
         inline_response = InlineResponse()
-        page = unecon_request(group=self.group)
+        page = unecon_request(group=self.group_id)
 
         if page.status_code == 200:
             page_parser = UneconParser(page.content)
@@ -99,61 +91,3 @@ class ScheduleCreator:
                     inline_response.add_item(next_week)
 
         return inline_response
-
-    def form_on_button_click_response(self, btn_data: dict) -> DefaultResponse:
-        """
-        Формирует ответ бота при нажатии на кнопку
-        :param btn_data: callback_data кнопки
-        :return: объект ответа DefaultResponse
-        """
-        button_click_response = DefaultResponse()
-
-        callback_btn_type = None
-        for btn_type in BtnTypes:
-            if btn_type.name == btn_data["type"]:
-                callback_btn_type = btn_type
-
-        page = unecon_request(group=self.group, week=self.week)
-        parser = UneconParser(page.content)
-        lessons = parser.parse_page()
-        schedule = Schedule(lessons)
-
-        if callback_btn_type == BtnTypes.CHANGE_WEEK:
-            markup = create_schedule_folded_markup(self.group, self.week)
-
-            if schedule.lessons:
-                group = Group.get_group_by_id(self.group)
-                schedule_str = schedule.transform_schedule_to_str(group_name=group.name, week=self.week)
-
-                button_click_response.set_data(text=schedule_str, markup=markup)
-            else:
-                button_click_response.set_data(text="На эту неделю нет расписания", markup=markup)
-
-        elif callback_btn_type == BtnTypes.MORE:
-            if schedule.lessons:
-                markup = create_schedule_unfolded_markup(schedule.lessons, self.group, self.week)
-
-                schedule_str = schedule.transform_schedule_to_str()
-
-                button_click_response.set_data(text=schedule_str, markup=markup)
-
-        elif callback_btn_type == BtnTypes.GET_FULL_DAY:
-            if schedule.lessons:
-                lessons_at_this_day = schedule.get_info_about_day(btn_data["day"])
-                schedule_at_this_day = Schedule(lessons=lessons_at_this_day)
-                lessons_str = schedule_at_this_day.transform_schedule_to_str(is_detail_mode=True)
-                markup = InlineKeyboardMarkup([[
-                    InlineKeyboardButton(
-                        "Назад к расписанию недели",
-                        callback_data=json.dumps(
-                            {
-                                "type": BtnTypes.CHANGE_WEEK.name,
-                                "group": self.group,
-                                "week": self.week
-                            })
-                    )
-                ]])
-
-                button_click_response.set_data(text=lessons_str, markup=markup)
-
-        return button_click_response

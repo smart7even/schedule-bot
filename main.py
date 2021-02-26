@@ -2,9 +2,10 @@ import os
 import json
 import settings
 from button_actions import ButtonActions
+from button_handlers import handle_set_group_btn, handle_get_schedule_btn, handle_faculty_btn, handle_course_btn, \
+    handle_schedule_btns
 from core.types.response import DefaultResponse
 
-from models import Group, Session
 from schedule_repsonse import ScheduleCreator
 
 from markup import keyboard_main
@@ -14,7 +15,6 @@ from telegram.ext import (
     Updater,
     CallbackContext,
     CommandHandler,
-    ConversationHandler,
     Filters,
     MessageHandler,
     CallbackQueryHandler,
@@ -44,12 +44,6 @@ def offer_help(update: Update, context: CallbackContext):
     update.message.reply_text("Кажется, такой команды нет. Если нужна помощь, то нажми на /help")
 
 
-def handle_schedule(update: Update, context: CallbackContext):
-    update.message.reply_text("Введи название своей группы, например, БИ-2002")
-
-    return 1
-
-
 def handle_schedule_menu(update: Update, context: CallbackContext):
     response = DefaultResponse()
     response.text = "Выберите факультет"
@@ -64,30 +58,10 @@ def set_group(update: Update, context: CallbackContext):
     update.message.reply_text(text="Выберите факультет", reply_markup=markup)
 
 
-def send_schedule(update: Update, context: CallbackContext):
-    session = Session()
-    group_name = update.message.text
-
-    group = session.query(Group).filter(Group.name == group_name).one_or_none()
-
-    if group:
-        group_id = group.id
-        response_creator = ScheduleCreator(group_id)
-        response = response_creator.form_response(group_name)
-        if response.is_success():
-            update.message.reply_text(response.text, reply_markup=response.markup, parse_mode="HTML")
-    else:
-        update.message.reply_text("Группа не найдена")
-
-    session.close()
-
-    return ConversationHandler.END
-
-
 def handle_buttons(update: Update, context: CallbackContext):
     query = update.callback_query
 
-    btn_data = json.loads(query.data)
+    btn_data: dict = json.loads(query.data)
 
     callback_btn_type = None
     for btn_type in BtnTypes:
@@ -101,32 +75,30 @@ def handle_buttons(update: Update, context: CallbackContext):
                 callback_action_type = action_type
 
     if callback_btn_type in (BtnTypes.CHANGE_WEEK, BtnTypes.GET_FULL_DAY, BtnTypes.MORE):
-        response_creator = ScheduleCreator(group_id=btn_data["group"], week=btn_data["week"])
-        response = response_creator.form_on_button_click_response(btn_data)
-        if response.is_success():
-            query.edit_message_text(text=response.text, reply_markup=response.markup, parse_mode='HTML')
-    elif callback_btn_type == BtnTypes.GROUP_BTN:
+        day = btn_data.get("day")
 
+        response = handle_schedule_btns(callback_btn_type, btn_data["group"], btn_data["week"], day)
+        if response.is_valid():
+            query.edit_message_text(text=response.text, reply_markup=response.markup, parse_mode='HTML')
+
+    elif callback_btn_type == BtnTypes.GROUP_BTN:
         if callback_action_type == ActionTypes.SET_USER_GROUP:
-            response = ButtonActions.set_group(btn_data["group_id"], query.from_user.id)
-            query.answer(text=f"Группа {response.text} установлена!")
+            response = handle_set_group_btn(btn_data["group_id"], user_id=query.from_user.id)
+            query.answer(text=response.text)
         elif callback_action_type == ActionTypes.GET_SCHEDULE:
-            response = ButtonActions.get_schedule(btn_data["group_id"])
-            if response.is_success():
+            response = handle_get_schedule_btn(btn_data["group_id"])
+            if response.is_valid():
                 query.edit_message_text(text=response.text, reply_markup=response.markup, parse_mode="html")
             else:
                 query.edit_message_text(text="Похоже на эту неделю нет расписания", reply_markup=response.markup)
+
     elif callback_btn_type == BtnTypes.FACULTY_BTN:
-        response = DefaultResponse()
-        response.markup = ButtonActions.get_courses_choice_form(btn_data["f_id"], callback_action_type)
-        response.text = "Выберите курс"
+        response = handle_faculty_btn(callback_action_type, faculty_id=btn_data["f_id"])
+        if response.is_valid():
+            query.edit_message_text(text=response.text, reply_markup=response.markup)
 
-        query.edit_message_text(text=response.text, reply_markup=response.markup)
     elif callback_btn_type == BtnTypes.COURSE_BTN:
-
-        response = DefaultResponse()
-        response.markup = ButtonActions.get_group_choice_form(btn_data["f_id"], btn_data["c_id"], callback_action_type)
-        response.text = "Выберите группу"
+        response = handle_course_btn(callback_action_type, faculty_id=btn_data["f_id"], course=btn_data["c_id"])
 
         query.edit_message_text(text=response.text, reply_markup=response.markup, parse_mode="html")
     query.answer()
@@ -135,7 +107,7 @@ def handle_buttons(update: Update, context: CallbackContext):
 def send_user_schedule(update: Update, context: CallbackContext):
     response = ButtonActions.get_user_schedule(update.message.from_user.id)
 
-    if not response.is_success():
+    if not response.is_valid():
         response.text = "Вы не выбрали группу. Нажмите на /set_group и выберите свою группу"
 
     update.message.reply_text(
@@ -148,7 +120,7 @@ def send_user_schedule(update: Update, context: CallbackContext):
 def send_schedule_inline(update: Update, context: CallbackContext):
     inline_response_creator = ScheduleCreator(group_id=12837)
     inline_response = inline_response_creator.form_inline_response()
-    if inline_response.is_success():
+    if inline_response.is_valid():
         update.inline_query.answer(inline_response.items)
 
 

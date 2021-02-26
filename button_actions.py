@@ -11,7 +11,7 @@ from telegram import InlineKeyboardMarkup
 class ButtonActions:
 
     @staticmethod
-    def set_group(group_id: int, user_id: int):
+    def set_group(group_id: int, user_id: int) -> DefaultResponse:
         user = User.get_user(user_id)
         user.set_group(group_id)
 
