@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from core.types.lesson import Lesson
+from core.types.text_elements import Bold, Plain, NewLine, wrap_with_new_lines
 
 
 class Schedule:
@@ -17,40 +18,44 @@ class Schedule:
         """
         Создает из списка объектов Lesson их строковое представление для отправки пользователю
         """
+        schedule_list = []
         day = None
         prev_lesson_time = None
-        schedule_str = ""
         is_new_day = None
 
         if group_name:
-            schedule_str += f"<b>{group_name}</b>\n"
+            schedule_list.append(Bold(group_name))
+            schedule_list.append(NewLine(1))
 
         if week:
-            schedule_str += f"<b>Неделя {week}</b>\n"
+            schedule_list.append(Bold(f"Неделя {week}"))
+            schedule_list.append(NewLine(1))
 
         for lesson in self.lessons:
             if lesson.day != day or not day:
                 day = lesson.day
                 is_new_day = True
-                schedule_str += f"\n<b>{day} {lesson.day_of_week}</b>\n"
+                schedule_list.append(wrap_with_new_lines(Bold(f"{day} {lesson.day_of_week}")))
             else:
                 is_new_day = False
 
             if prev_lesson_time != lesson.time or is_new_day:
                 if is_detail_mode:
-                    schedule_str += "\n"
-                schedule_str += f"<b>{lesson.time}</b>\n{lesson.name}\n"
+                    schedule_list.append(NewLine())
+
+                schedule_list.append(Bold(lesson.time))
+                schedule_list.append(wrap_with_new_lines(Plain(lesson.name)))
             else:
                 if is_detail_mode:
-                    schedule_str += "\n"
+                    schedule_list.append(NewLine())
 
             if is_detail_mode:
-                schedule_str += f"Преподаватель: {lesson.professor}\n"
-                schedule_str += f"{lesson.location}\n"
+                schedule_list.append(Plain(f"Преподаватель: {lesson.professor}"))
+                schedule_list.append(wrap_with_new_lines(Plain(lesson.location)))
 
             prev_lesson_time = lesson.time
 
-        return schedule_str
+        return "".join(element.to_str() for element in schedule_list)
 
     def get_info_about_day(self, day_number: int) -> List[Lesson]:
         """
