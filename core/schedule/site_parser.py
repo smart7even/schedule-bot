@@ -6,17 +6,10 @@ from core.types.lesson import Lesson
 
 
 class UneconParser:
-    """
-    Парсер html с сайта расписания СПбГЭУ
-    """
     def __init__(self, html_content: bytes):
         self.html_content = html_content
 
     def parse_page(self) -> List[Lesson]:
-        """
-        Формирует список объектов Lesson
-        :return: список объектов Lesson
-        """
         soup = BeautifulSoup(self.html_content, features="html.parser")
         day = None
         week = None
@@ -31,7 +24,8 @@ class UneconParser:
 
                 lesson_day = day
                 lesson_day_of_week = week
-                lesson_name = tr.find("span", {"class": "predmet"}).string
+                lesson_name_tr = tr.find("span", {"class": "predmet"})
+                lesson_name = lesson_name_tr.text
                 lesson_time = tr.find("span", {"class": "time"}).string
                 lesson_professor_span = tr.find("span", {"class": "prepod"})
                 if lesson_professor_span.a:
@@ -53,9 +47,6 @@ class UneconParser:
         return lessons
 
     def get_current_week_number(self) -> int:
-        """
-        :return: номер недели расписания на html странице от начала учебного года
-        """
         soup = BeautifulSoup(self.html_content, features="html.parser")
 
         week = r"w=(\d{2})"
