@@ -1,9 +1,9 @@
 from core.types.button import ActionTypes
-from markup import create_group_buttons, create_faculty_buttons, create_course_buttons
+from core.button.markup import create_group_buttons, create_faculty_buttons, create_course_buttons
 from core.types.response import DefaultResponse
-from models import User, Group, Faculty
-from schedule_repsonse import ScheduleCreator
-from typing import Optional
+from core.models.user import User
+from core.models.group import Group
+from core.models.faculty import Faculty
 
 from telegram import InlineKeyboardMarkup
 
@@ -12,7 +12,7 @@ class ButtonActions:
 
     @staticmethod
     def set_group(group_id: int, user_id: int) -> DefaultResponse:
-        user = User.get_user(user_id)
+        user = User.get_user_by_id(user_id)
         user.set_group(group_id)
 
         response = DefaultResponse()
@@ -42,22 +42,4 @@ class ButtonActions:
 
         return markup
 
-    @staticmethod
-    def get_schedule(group_id: int, week: Optional[int] = None) -> DefaultResponse:
-        group = Group.get_group_by_id(group_id)
 
-        if group:
-            schedule_creator = ScheduleCreator(group_id, week)
-            response = schedule_creator.form_response(group.name)
-        else:
-            response = DefaultResponse()
-
-        return response
-
-    @staticmethod
-    def get_user_schedule(user_id: int) -> DefaultResponse:
-        user = User.get_user(user_id)
-
-        response = ButtonActions.get_schedule(user.group_id)
-
-        return response

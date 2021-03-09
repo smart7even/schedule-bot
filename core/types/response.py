@@ -13,7 +13,6 @@ class Response(ABC):
 
 
 class DefaultResponse(Response):
-    """Класс ответа на команду /schedule"""
 
     def __init__(self):
         self.__text: Optional[str] = None

@@ -5,7 +5,8 @@ import json
 
 from telegram import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
-from models import Group, Faculty
+from core.models.group import Group
+from core.models.faculty import Faculty
 
 keyboard_main = ReplyKeyboardMarkup(
     [
@@ -20,12 +21,6 @@ keyboard_main = ReplyKeyboardMarkup(
 
 
 def create_change_week_markup(group: int, week: int) -> InlineKeyboardMarkup:
-    """
-    Эта функция создает разметку с кнопками для перехода на предыдущую и следующую неделю расписания
-    :param group: id группы
-    :param week: номер недели от начала учебного года
-    :return: объект разметки telegram.InlineKeyboardMarkup
-    """
     markup = InlineKeyboardMarkup(
         [
             [
@@ -51,13 +46,6 @@ def create_more_markup(group_id: int, week: int):
 
 
 def create_get_full_days_markup(schedule: List[Lesson], group: int, week: int) -> InlineKeyboardMarkup:
-    """
-    Эта функция создает разметку с кнопками для перехода к подробному расписанию на определенный день
-    :param schedule: список объектов Lesson
-    :param group: id группы
-    :param week: номер недели от начала учебного года
-    :return: объект разметки telegram.InlineKeyboardMarkup
-    """
     inline_keyboard_list = []
     day = None
     day_count = 0
@@ -102,7 +90,6 @@ def create_schedule_unfolded_markup(schedule: List[Lesson], group_id: int, week:
 
 
 def mix_markups(*markups: InlineKeyboardMarkup) -> InlineKeyboardMarkup:
-    """Соединяет объекты разметки в одну разметку"""
     new_markup_list = []
 
     for markup in markups:
@@ -155,3 +142,7 @@ def create_course_buttons(course_list: List[int], faculty_id: int, action: Actio
     markup = InlineKeyboardMarkup(markup_list)
 
     return markup
+
+
+def transform_markup_to_str(markup: InlineKeyboardMarkup) -> str:
+    return json.dumps(markup.to_dict())

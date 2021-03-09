@@ -1,14 +1,23 @@
+import datetime
 import os
 import json
-import settings
-from button_actions import ButtonActions
-from button_handlers import handle_set_group_btn, handle_get_schedule_btn, handle_faculty_btn, handle_course_btn, \
+import time
+from multiprocessing import Process
+from threading import Timer
+
+from core.button.button_actions import ButtonActions
+from core.schedule.schedule_api import get_user_schedule
+from core.button.button_handlers import handle_set_group_btn, handle_get_schedule_btn, handle_faculty_btn, handle_course_btn, \
     handle_schedule_btns
 from core.types.response import DefaultResponse
+from db import Session
+from core.models.current_week import CurrentWeek
+from core.models.schedule_cache import clear_schedule_cache
+from core.request import unecon_request
 
-from schedule_repsonse import ScheduleCreator
+from core.schedule.schedule_repsonse import ScheduleCreator
 
-from markup import keyboard_main
+from core.button.markup import keyboard_main
 
 from telegram import Update
 from telegram.ext import (
@@ -22,6 +31,7 @@ from telegram.ext import (
 )
 
 from core.types.button import ActionTypes, BtnTypes
+from core.schedule.site_parser import UneconParser
 
 
 def send_welcome(update: Update, context: CallbackContext):
@@ -105,7 +115,7 @@ def handle_buttons(update: Update, context: CallbackContext):
 
 
 def send_user_schedule(update: Update, context: CallbackContext):
-    response = ButtonActions.get_user_schedule(update.message.from_user.id)
+    response = get_user_schedule(update.message.from_user.id)
 
     if not response.is_valid():
         response.text = "Вы не выбрали группу. Нажмите на /set_group и выберите свою группу"
@@ -149,5 +159,40 @@ def main():
     updater.start_polling()
 
 
+def get_seconds_till_next_week():
+    dt = datetime.datetime.now()
+    start_of_current_day = datetime.datetime.combine(dt, datetime.time.min)
+    current_weekday = start_of_current_day.weekday()
+    days_till_next_week = 7 - current_weekday
+    start_of_next_week = start_of_current_day + datetime.timedelta(days=days_till_next_week)
+    return (start_of_next_week - dt).total_seconds()
+
+
+def update_current_week():
+    page = unecon_request(group_id=12837)
+    page_parser = UneconParser(page.content)
+    current_week = page_parser.get_current_week_number()
+
+    session = Session()
+
+    current_week_obj = CurrentWeek(week=current_week, date=datetime.datetime.now())
+    session.add(current_week_obj)
+    session.commit()
+    session.close()
+
+
+def update_current_week_process_func():
+    while True:
+        update_current_week()
+        seconds_till_next_week = get_seconds_till_next_week()
+        timer = Timer(interval=seconds_till_next_week, function=update_current_week)
+        timer.start()
+        while timer.is_alive():
+            time.sleep(60 * 60 * 24)
+            clear_schedule_cache()
+
+
 if __name__ == "__main__":
+    update_current_week_process = Process(target=update_current_week_process_func)
+    update_current_week_process.start()
     main()

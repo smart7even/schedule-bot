@@ -26,14 +26,14 @@ class Plain(TextElement):
 
 
 class NewLine(TextElement):
-    def __init__(self, empty_lines_num: int = 1):
-        self.__element = "\n" * empty_lines_num
+    def __init__(self, new_lines_num: int = 1):
+        self.__element = "\n" * new_lines_num
 
     def to_str(self) -> str:
         return self.__element
 
 
-class StrElement:
+class ElementsContainer:
     def __init__(self, *elements: TextElement):
         self.__elements = elements
 
@@ -41,6 +41,10 @@ class StrElement:
         return "".join(element.to_str() for element in self.__elements)
 
 
-def wrap_with_new_lines(element: TextElement) -> StrElement:
-    modified_element = StrElement(NewLine(), element, NewLine())
+def wrap(element: TextElement, wrapper: TextElement) -> ElementsContainer:
+    modified_element = ElementsContainer(wrapper, element, wrapper)
     return modified_element
+
+
+def wrap_with_new_lines(element: TextElement) -> ElementsContainer:
+    return wrap(element, wrapper=NewLine())

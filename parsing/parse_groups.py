@@ -1,7 +1,9 @@
 from bs4 import BeautifulSoup
 import requests
 from sqlalchemy.orm import sessionmaker
-from models import engine, Group, Faculty
+from db import engine
+from core.models.group import Group
+from core.models.faculty import Faculty
 
 Session = sessionmaker()
 Session.configure(bind=engine)
