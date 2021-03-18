@@ -4,6 +4,7 @@ from db import Base, Session
 
 
 class Group(Base):
+    """Group model"""
     __tablename__ = "groups"
 
     id = Column(Integer, primary_key=True)
@@ -13,6 +14,7 @@ class Group(Base):
 
     @staticmethod
     def get_group_by_id(group_id: int):
+        """Gets group by id"""
         session = Session()
 
         group = session.query(Group).filter(Group.id == group_id).one_or_none()
@@ -23,6 +25,7 @@ class Group(Base):
 
     @staticmethod
     def get_all():
+        """Gets all groups stored in db"""
         session = Session()
 
         groups = session.query(Group).all()
@@ -33,6 +36,11 @@ class Group(Base):
 
     @staticmethod
     def get_courses_in_faculty(faculty_id: int):
+        """
+        Gets courses that exist in faculty
+        :param faculty_id: faculty id in the university site
+        :return: courses list
+        """
         session = Session()
 
         courses = session.query(Group.course).filter(Group.faculty_id == faculty_id).distinct().all()
@@ -46,6 +54,12 @@ class Group(Base):
 
     @staticmethod
     def get_groups_by_faculty_and_course(faculty_id: int, course: int):
+        """
+        Gets groups with particular faculty and course
+        :param faculty_id: faculty id in the university site
+        :param course: course number
+        :return: list of group objects
+        """
         session = Session()
 
         groups = session.query(Group).filter(Group.faculty_id == faculty_id, Group.course == course).all()

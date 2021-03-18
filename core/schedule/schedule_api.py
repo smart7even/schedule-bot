@@ -14,6 +14,12 @@ from core.schedule.schedule_repsonse import ScheduleCreator
 
 
 def get_schedule(group_id: int, week: Optional[int] = None) -> DefaultResponse:
+    """
+
+    :param group_id: group id in the university site
+    :param week: study week number from the start of study year
+    :return: DefaultResponse object
+    """
     group = Group.get_group_by_id(group_id)
 
     session = Session()
@@ -42,6 +48,11 @@ def get_schedule(group_id: int, week: Optional[int] = None) -> DefaultResponse:
 
 
 def get_user_schedule(user_id: int) -> DefaultResponse:
+    """
+    gets schedule by user id
+    :param user_id: user id in Telegram
+    :return: DefaultResponse object
+    """
     user = User.get_user_by_id(user_id)
 
     current_week = get_current_week().week

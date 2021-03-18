@@ -4,6 +4,7 @@ from db import Base, Session
 
 
 class ScheduleCache(Base):
+    """Schedule Cache model"""
     __tablename__ = "schedule_cache"
 
     id = Column(Integer, primary_key=True)
@@ -15,6 +16,7 @@ class ScheduleCache(Base):
 
     @staticmethod
     def save(group_id: int, week: int, text: str, markup: str):
+        """saves cache in db"""
         session = Session()
         schedule_cache = session.query(ScheduleCache).filter(ScheduleCache.group_id == group_id,
                                                              ScheduleCache.week == week).one_or_none()
@@ -31,6 +33,7 @@ class ScheduleCache(Base):
 
 
 def clear_schedule_cache():
+    """clears schedule cache stored in db"""
     session = Session()
     session.execute("DELETE FROM schedule_cache")
     session.commit()

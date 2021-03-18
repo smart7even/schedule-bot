@@ -9,8 +9,13 @@ Session = sessionmaker()
 Session.configure(bind=engine)
 
 
-def fill_groups(faculty: int, course: int):
-    page = requests.get("https://rasp.unecon.ru/raspisanie.php", params={"fakultet": faculty, "kurs": course})
+def fill_groups(faculty_id: int, course: int):
+    """
+    Fill db with groups in particular faculty and course
+    :param faculty_id: faculty id in the university site
+    :param course: course number
+    """
+    page = requests.get("https://rasp.unecon.ru/raspisanie.php", params={"fakultet": faculty_id, "kurs": course})
 
     if page.status_code == 200:
         soup = BeautifulSoup(page.content, features="html.parser")
@@ -24,7 +29,7 @@ def fill_groups(faculty: int, course: int):
                     new_group = Group(
                         id=group["href"].split("=")[-1],
                         name=group.string,
-                        faculty_id=faculty,
+                        faculty_id=faculty_id,
                         course=course
                     )
                     session.add(new_group)
@@ -39,6 +44,7 @@ def fill_groups(faculty: int, course: int):
 
 
 def fill_faculties():
+    """Fill db with faculties"""
     page = requests.get("https://rasp.unecon.ru")
 
     if page.status_code == 200:
@@ -59,6 +65,9 @@ def fill_faculties():
 
 
 def get_faculty_courses(faculty_id: int):
+    """
+    :param faculty_id: faculty id in the university site
+    """
     courses = []
 
     page = requests.get("https://rasp.unecon.ru", {"fakultet": faculty_id})
@@ -77,6 +86,7 @@ def get_faculty_courses(faculty_id: int):
 
 
 def fill_all_groups():
+    """Fill db with all groups"""
     session = Session()
 
     for faculty in session.query(Faculty).all():

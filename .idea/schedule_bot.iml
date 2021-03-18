@@ -7,4 +7,7 @@
     <orderEntry type="jdk" jdkName="Python 3.8 (schedule_bot)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
+  <component name="PackageRequirementsSettings">
+    <option name="requirementsPath" value="C:\Users\smart\Desktop\schedule_bot\requirements.txt" />
+  </component>
 </module>

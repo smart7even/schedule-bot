@@ -6,10 +6,17 @@ from core.types.lesson import Lesson
 
 
 class UneconParser:
+    """Unecon schedule parser"""
     def __init__(self, html_content: bytes):
+        """
+        :param html_content: html content from unecon schedule page
+        """
         self.html_content = html_content
 
     def parse_page(self) -> List[Lesson]:
+        """
+        Parses html and returns list of lesson objects
+        """
         soup = BeautifulSoup(self.html_content, features="html.parser")
         day = None
         week = None
@@ -47,6 +54,10 @@ class UneconParser:
         return lessons
 
     def get_current_week_number(self) -> int:
+        """
+        Parses html content and extracts study week number since the start of study year
+        :return:
+        """
         soup = BeautifulSoup(self.html_content, features="html.parser")
 
         week = r"w=(\d{2})"

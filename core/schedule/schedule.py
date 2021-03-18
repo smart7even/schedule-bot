@@ -11,6 +11,7 @@ from core.types.text_elements import (
 
 
 class Schedule:
+    """Schedule object for processing lessons"""
 
     def __init__(self, lessons: List[Lesson]):
         self.lessons = lessons
@@ -19,6 +20,13 @@ class Schedule:
                                   group_name: Optional[str] = None,
                                   week: Optional[int] = None,
                                   is_detail_mode=False) -> str:
+        """
+        Transforms schedule to str representation
+        :param group_name: group name
+        :param week: study week since the start of study year
+        :param is_detail_mode: enables detailed representation
+        :return: string representation of schedule
+        """
         schedule_list = []
         day = None
         prev_lesson_time = None
@@ -61,6 +69,11 @@ class Schedule:
         return elements_container.to_str()
 
     def get_info_about_day(self, day_number: int) -> List[Lesson]:
+        """
+        Returns the lessons that belong to a particular day
+        :param day_number: study day number from the start of the week
+        :return: list of Lesson objects
+        """
         lessons_at_one_day = []
         day_count = 0
         day = None

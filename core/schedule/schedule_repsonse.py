@@ -9,12 +9,22 @@ from core.schedule.site_parser import UneconParser
 
 
 class ScheduleCreator:
+    """Handles schedule requests"""
 
     def __init__(self, group_id: int, week: Optional[int] = None):
+        """
+        :param group_id: group id in the university site
+        :param week: study week number since the start of study year
+        """
         self.group_id = group_id
         self.week = week
 
     def form_response(self, group_name: Optional[str] = None) -> DefaultResponse:
+        """
+        Gets and returns schedule as a DefaultResponse object
+        :param group_name: group name to add group name to string representation
+        :return: DefaultResponse object
+        """
         response = DefaultResponse()
         page = unecon_request(self.group_id, self.week)
 
@@ -39,6 +49,7 @@ class ScheduleCreator:
         return response
 
     def form_inline_response(self) -> InlineResponse:
+        """Gets and returns schedule as a InlineResponse object"""
         inline_response = InlineResponse()
         page = unecon_request(group_id=self.group_id)
 

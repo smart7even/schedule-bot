@@ -18,6 +18,12 @@ from core.schedule.site_parser import UneconParser
 
 
 def handle_change_week_btn(schedule: Schedule, group_id: int, week: int) -> DefaultResponse:
+    """
+    :param schedule: Schedule object
+    :param group_id: group id in the university site
+    :param week: study week number since the start of study year
+    :return: DefaultResponse object
+    """
     response = DefaultResponse()
 
     markup = create_schedule_folded_markup(group_id, week)
@@ -34,6 +40,12 @@ def handle_change_week_btn(schedule: Schedule, group_id: int, week: int) -> Defa
 
 
 def handle_more_btn(schedule: Schedule, group_id: int, week: int) -> DefaultResponse:
+    """
+    :param schedule: Schedule object
+    :param group_id: group id in the university site
+    :param week: study week number since the start of study year
+    :return: DefaultResponse object
+    """
     response = DefaultResponse()
 
     if schedule.lessons:
@@ -47,6 +59,13 @@ def handle_more_btn(schedule: Schedule, group_id: int, week: int) -> DefaultResp
 
 
 def handle_get_full_day_btn(schedule: Schedule, group_id: int, week: int, day: int) -> DefaultResponse:
+    """
+    :param schedule: Schedule object
+    :param group_id: group id in the university site
+    :param week: study week number since the start of study year
+    :param day: DefaultResponse object
+    :return:
+    """
     response = DefaultResponse()
 
     if schedule.lessons:
@@ -71,6 +90,11 @@ def handle_get_full_day_btn(schedule: Schedule, group_id: int, week: int, day: i
 
 
 def handle_set_group_btn(group_id: int, user_id: int) -> AnswerResponse:
+    """
+    :param group_id: group id in the university site
+    :param user_id: user id in Telegram
+    :return: AnswerResponse object
+    """
     response = AnswerResponse()
     set_group_response = ButtonActions.set_group(group_id, user_id)
     response.text = f"Группа {set_group_response.text} установлена!"
@@ -78,6 +102,10 @@ def handle_set_group_btn(group_id: int, user_id: int) -> AnswerResponse:
 
 
 def handle_get_schedule_btn(group_id) -> DefaultResponse:
+    """
+    :param group_id: group id in the university site
+    :return: DefaultResponse
+    """
     current_week = get_current_week().week
 
     response = get_schedule(group_id, current_week)
@@ -85,6 +113,11 @@ def handle_get_schedule_btn(group_id) -> DefaultResponse:
 
 
 def handle_faculty_btn(callback_action_type: ActionTypes, faculty_id: int) -> DefaultResponse:
+    """
+    :param callback_action_type: Action that will be handled by buttons
+    :param faculty_id: faculty id in the university site
+    :return: DefaultResponse object
+    """
     response = DefaultResponse()
     response.markup = ButtonActions.get_courses_choice_form(faculty_id, callback_action_type)
     response.text = "Выберите курс"
@@ -92,7 +125,13 @@ def handle_faculty_btn(callback_action_type: ActionTypes, faculty_id: int) -> De
     return response
 
 
-def handle_course_btn(callback_action_type: ActionTypes, faculty_id: int, course: int):
+def handle_course_btn(callback_action_type: ActionTypes, faculty_id: int, course: int) -> DefaultResponse:
+    """
+    :param callback_action_type: Action that will be handled by buttons
+    :param faculty_id: faculty id in the university site
+    :param course: course number
+    :return: DefaultResponse object
+    """
     response = DefaultResponse()
     response.markup = ButtonActions.get_group_choice_form(faculty_id, course, callback_action_type)
     response.text = "Выберите группу"
@@ -102,6 +141,13 @@ def handle_course_btn(callback_action_type: ActionTypes, faculty_id: int, course
 
 def handle_schedule_btns(
         callback_btn_type: BtnTypes, group_id: int, week: int, day: Optional[int] = None) -> DefaultResponse:
+    """
+    :param callback_btn_type: Action that will be handled by buttons
+    :param group_id: group id in the university site
+    :param week: study week number since the start of study year
+    :param day: study day number from the start of the week
+    :return: DefaultResponse
+    """
     button_click_response = DefaultResponse()
 
     session = Session()

@@ -3,6 +3,12 @@ from typing import Optional
 
 
 def unecon_request(group_id: int, week: Optional[int] = None):
+    """
+    Does request to unecon schedule site and returns response
+    :param group_id:
+    :param week: study week since the start of the year
+    :return: site response
+    """
 
     url = "https://rasp.unecon.ru/raspisanie_grp.php"
 

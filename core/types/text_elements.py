@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 
 class TextElement(ABC):
+    """Abstract class representing text elements"""
 
     @abstractmethod
     def to_str(self) -> str:
@@ -9,6 +10,7 @@ class TextElement(ABC):
 
 
 class Bold(TextElement):
+    """Bold text"""
 
     def __init__(self, text: str):
         self.__element = f"<b>{text}</b>"
@@ -18,6 +20,7 @@ class Bold(TextElement):
 
 
 class Plain(TextElement):
+    """Plain text"""
     def __init__(self, text: str):
         self.__element = text
 
@@ -26,6 +29,7 @@ class Plain(TextElement):
 
 
 class NewLine(TextElement):
+    """New line"""
     def __init__(self, new_lines_num: int = 1):
         self.__element = "\n" * new_lines_num
 
@@ -34,6 +38,7 @@ class NewLine(TextElement):
 
 
 class ElementsContainer:
+    """Container to store text elements"""
     def __init__(self, *elements: TextElement):
         self.__elements = elements
 
@@ -42,9 +47,11 @@ class ElementsContainer:
 
 
 def wrap(element: TextElement, wrapper: TextElement) -> ElementsContainer:
+    """Wraps text element with other text element"""
     modified_element = ElementsContainer(wrapper, element, wrapper)
     return modified_element
 
 
 def wrap_with_new_lines(element: TextElement) -> ElementsContainer:
+    """Wraps text element with new lines"""
     return wrap(element, wrapper=NewLine())

@@ -5,6 +5,7 @@ from db import Base, Session
 
 
 class Faculty(Base):
+    """Faculty model"""
     __tablename__ = "faculties"
 
     id = Column(Integer, primary_key=True)
@@ -14,6 +15,7 @@ class Faculty(Base):
 
     @staticmethod
     def get_all():
+        """Gets all faculties stored in db"""
         session = Session()
 
         faculties = session.query(Faculty).all()
@@ -23,4 +25,5 @@ class Faculty(Base):
         return faculties
 
     def get_groups(self):
+        """returns groups that belong to the faculty"""
         return self.groups

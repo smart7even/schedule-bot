@@ -5,6 +5,7 @@ from db import Base, Session
 
 
 class User(Base):
+    """User model"""
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
@@ -12,6 +13,11 @@ class User(Base):
 
     @staticmethod
     def get_user_by_id(user_id):
+        """
+        Gets user by id from db or creates user in db
+        :param user_id: user id in Telegram
+        :return: User object
+        """
         session = Session()
 
         user = session.query(User).filter(User.id == user_id).one_or_none()
@@ -28,6 +34,10 @@ class User(Base):
         return new_user
 
     def set_group(self, group_id: int):
+        """
+        Sets user group in db
+        :param group_id: group id in the university site
+        """
         session = Session()
 
         user = session.query(User).filter(User.id == self.id).one()
