@@ -6,6 +6,7 @@ from multiprocessing import Process
 from threading import Timer
 
 from core.button.button_actions import ButtonActions
+from core.models.user import User
 from core.schedule.schedule_api import get_user_schedule
 from core.button.button_handlers import handle_set_group_btn, handle_get_schedule_btn, handle_faculty_btn, handle_course_btn, \
     handle_schedule_btns
@@ -19,7 +20,7 @@ from core.schedule.schedule_repsonse import ScheduleCreator
 
 from core.button.markup import keyboard_main
 
-from telegram import Update
+from telegram import Update, InlineQueryResultArticle, InputTextMessageContent
 from telegram.ext import (
     Updater,
     CallbackContext,
@@ -128,10 +129,26 @@ def send_user_schedule(update: Update, context: CallbackContext):
 
 
 def send_schedule_inline(update: Update, context: CallbackContext):
-    inline_response_creator = ScheduleCreator(group_id=12837)
-    inline_response = inline_response_creator.form_inline_response()
-    if inline_response.is_valid():
-        update.inline_query.answer(inline_response.items)
+    user = User.get_user_by_id(update.inline_query.from_user.id)
+
+    print(user.group_id)
+    if not user.group_id:
+        print("No group")
+        schedule_not_found_message = InlineQueryResultArticle(
+            id="3",
+            title="Нажми на меня",
+            input_message_content=InputTextMessageContent(
+                message_text="У вас не указана группа. Перейдите в @schedule_unecon_bot и установите свою группу",
+                parse_mode="HTML"
+            )
+        )
+
+        update.inline_query.answer([schedule_not_found_message])
+    else:
+        inline_response_creator = ScheduleCreator(group_id=user.group_id)
+        inline_response = inline_response_creator.form_inline_response()
+        if inline_response.is_valid():
+            update.inline_query.answer(inline_response.items)
 
 
 def main():
@@ -182,6 +199,7 @@ def update_current_week():
 
 
 def update_current_week_process_func():
+    clear_schedule_cache()
     while True:
         update_current_week()
         seconds_till_next_week = get_seconds_till_next_week()

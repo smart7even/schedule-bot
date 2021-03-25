@@ -29,6 +29,7 @@ class User(Base):
         new_user = User(id=user_id)
         session.add(new_user)
         session.commit()
+        session.refresh(new_user)
         session.close()
 
         return new_user
