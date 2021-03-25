@@ -131,9 +131,7 @@ def send_user_schedule(update: Update, context: CallbackContext):
 def send_schedule_inline(update: Update, context: CallbackContext):
     user = User.get_user_by_id(update.inline_query.from_user.id)
 
-    print(user.group_id)
     if not user.group_id:
-        print("No group")
         schedule_not_found_message = InlineQueryResultArticle(
             id="3",
             title="Нажми на меня",
