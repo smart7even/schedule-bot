@@ -47,6 +47,11 @@ class UneconParser:
                 else:
                     lesson_location = None
 
+                lessons_location_remote_span = tr.find("span", {"class": "prim"})
+
+                if lessons_location_remote_span.text:
+                    lesson_location = lessons_location_remote_span.text
+
                 lesson = Lesson(lesson_name, lesson_day,
                                 lesson_day_of_week, lesson_time, lesson_professor, lesson_location)
                 lessons.append(lesson)
