@@ -8,7 +8,8 @@ from threading import Timer
 from core.button.button_actions import ButtonActions
 from core.models.user import User
 from core.schedule.schedule_api import get_user_schedule
-from core.button.button_handlers import handle_set_group_btn, handle_get_schedule_btn, handle_faculty_btn, handle_course_btn, \
+from core.button.button_handlers import handle_set_group_btn, handle_get_schedule_btn, handle_faculty_btn, \
+    handle_course_btn, \
     handle_schedule_btns
 from core.types.response import DefaultResponse
 from db import Session
