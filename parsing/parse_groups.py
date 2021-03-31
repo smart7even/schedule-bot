@@ -99,4 +99,5 @@ def fill_all_groups():
 
 
 if __name__ == "__main__":
+    fill_faculties()
     fill_all_groups()
