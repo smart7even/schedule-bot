@@ -6,6 +6,7 @@ from telegram import InlineKeyboardMarkup
 from core.models.current_week import get_current_week
 from core.models.group import Group
 from core.models.schedule_cache import ScheduleCache
+from core.repositories.schedule_cache_repository import ScheduleCacheRepository
 from core.repositories.user_repository import UserRepository
 from core.types.response import DefaultResponse
 from db import Session
@@ -25,7 +26,6 @@ def get_schedule(group_id: int, week: Optional[int] = None) -> DefaultResponse:
     session = Session()
     schedule_cache = session.query(ScheduleCache).filter(ScheduleCache.group_id == group_id,
                                                          ScheduleCache.week == week).one_or_none()
-    session.close()
 
     response = DefaultResponse()
     if schedule_cache:
@@ -35,14 +35,18 @@ def get_schedule(group_id: int, week: Optional[int] = None) -> DefaultResponse:
         if group:
             schedule_creator = ScheduleCreator(group_id, week)
             response = schedule_creator.form_response(group.name)
-            ScheduleCache.save(
+            schedule_cache_repository = ScheduleCacheRepository(session)
+            schedule_cache_repository.add(
                 group_id=group_id,
                 week=week,
                 text=response.text,
                 markup=transform_markup_to_str(response.markup)
             )
+            session.close()
         else:
             response = DefaultResponse()
+
+    session.close()
 
     return response
 
