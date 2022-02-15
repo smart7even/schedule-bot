@@ -11,29 +11,6 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     group_id = Column(Integer, ForeignKey("groups.id", ondelete="CASCADE"))
 
-    @staticmethod
-    def get_user_by_id(user_id):
-        """
-        Gets user by id from db or creates user in db
-        :param user_id: user id in Telegram
-        :return: User object
-        """
-        session = Session()
-
-        user = session.query(User).filter(User.id == user_id).one_or_none()
-
-        if user:
-            session.close()
-            return user
-
-        new_user = User(id=user_id)
-        session.add(new_user)
-        session.commit()
-        session.refresh(new_user)
-        session.close()
-
-        return new_user
-
     def set_group(self, group_id: int):
         """
         Sets user group in db

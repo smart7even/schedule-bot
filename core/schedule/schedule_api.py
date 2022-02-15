@@ -6,7 +6,7 @@ from telegram import InlineKeyboardMarkup
 from core.models.current_week import get_current_week
 from core.models.group import Group
 from core.models.schedule_cache import ScheduleCache
-from core.models.user import User
+from core.repositories.user_repository import UserRepository
 from core.types.response import DefaultResponse
 from db import Session
 from core.button.markup import transform_markup_to_str
@@ -53,7 +53,9 @@ def get_user_schedule(user_id: int) -> DefaultResponse:
     :param user_id: user id in Telegram
     :return: DefaultResponse object
     """
-    user = User.get_user_by_id(user_id)
+    session = Session()
+    user_repository = UserRepository(session)
+    user = user_repository.get_user_by_id(user_id)
 
     current_week = get_current_week().week
 

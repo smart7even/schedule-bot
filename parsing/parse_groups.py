@@ -98,6 +98,20 @@ def fill_all_groups():
     session.close()
 
 
+def update_old_groups():
+    session = Session()
+
+    for group in session.query(Group).all():
+        if group.course == 4:
+            session.delete(group)
+        else:
+            group.course += 1
+            session.add(group)
+        session.commit()
+
+    session.close()
+
+
 if __name__ == "__main__":
     fill_faculties()
     fill_all_groups()
