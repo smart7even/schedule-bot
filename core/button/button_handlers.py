@@ -4,13 +4,13 @@ from typing import Optional
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from core.button.button_actions import ButtonActions
+from core.repositories.group_repository import GroupRepository
+from core.repositories.schedule_cache_repository import ScheduleCacheRepository
 from core.types.button import BtnTypes, ActionTypes
 from core.types.response import DefaultResponse, AnswerResponse
 from core.button.markup import create_schedule_folded_markup, create_schedule_unfolded_markup, transform_markup_to_str
 from db import Session
 from core.models.current_week import get_current_week
-from core.models.schedule_cache import ScheduleCache
-from core.models.group import Group
 from core.request import unecon_request
 from core.schedule.schedule import Schedule
 from core.schedule.schedule_api import get_schedule
@@ -29,7 +29,10 @@ def handle_change_week_btn(schedule: Schedule, group_id: int, week: int) -> Defa
     markup = create_schedule_folded_markup(group_id, week)
 
     if schedule.lessons:
-        group = Group.get_group_by_id(group_id)
+        session = Session()
+        group_repository = GroupRepository(session)
+        group = group_repository.get_group_by_id(group_id)
+        session.close()
         schedule_str = schedule.transform_schedule_to_str(group_name=group.name, week=week)
 
         response.set_data(text=schedule_str, markup=markup)
@@ -151,10 +154,10 @@ def handle_schedule_btns(
     button_click_response = DefaultResponse()
 
     session = Session()
-    schedule_cache = session.query(ScheduleCache).filter(ScheduleCache.group_id == group_id,
-                                                         ScheduleCache.week == week).one_or_none()
-    session.close()
+    schedule_cache_repository = ScheduleCacheRepository(session)
+    schedule_cache = schedule_cache_repository.get(group_id=group_id, week=week)
 
+    schedule = None
     if not schedule_cache or callback_btn_type != BtnTypes.CHANGE_WEEK:
         page = unecon_request(group_id, week)
         parser = UneconParser(page.text)
@@ -168,7 +171,7 @@ def handle_schedule_btns(
             button_click_response.markup = InlineKeyboardMarkup.de_json(json.loads(schedule_cache.markup), bot=None)
         else:
             button_click_response = handle_change_week_btn(schedule, group_id, week)
-            ScheduleCache.save(
+            schedule_cache_repository.add(
                 group_id=group_id,
                 week=week,
                 text=button_click_response.text,
@@ -178,5 +181,7 @@ def handle_schedule_btns(
         button_click_response = handle_more_btn(schedule, group_id, week)
     elif callback_btn_type == BtnTypes.GET_FULL_DAY:
         button_click_response = handle_get_full_day_btn(schedule, group_id, week, day)
+
+    session.close()
 
     return button_click_response

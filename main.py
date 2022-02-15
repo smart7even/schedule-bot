@@ -6,7 +6,7 @@ from multiprocessing import Process
 from threading import Timer
 
 from core.button.button_actions import ButtonActions
-from core.models.user import User
+from core.repositories.user_repository import UserRepository
 from core.schedule.schedule_api import get_user_schedule
 from core.button.button_handlers import handle_set_group_btn, handle_get_schedule_btn, handle_faculty_btn, \
     handle_course_btn, \
@@ -130,7 +130,9 @@ def send_user_schedule(update: Update, context: CallbackContext):
 
 
 def send_schedule_inline(update: Update, context: CallbackContext):
-    user = User.get_user_by_id(update.inline_query.from_user.id)
+    session = Session()
+    user_repository = UserRepository(session)
+    user = user_repository.get_user_by_id(update.inline_query.from_user.id)
 
     if not user.group_id:
         schedule_not_found_message = InlineQueryResultArticle(

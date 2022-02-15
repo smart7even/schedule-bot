@@ -14,23 +14,6 @@ class ScheduleCache(Base):
     text = Column(String(3000))
     markup = Column(String(1000))
 
-    @staticmethod
-    def save(group_id: int, week: int, text: str, markup: str):
-        """saves cache in db"""
-        session = Session()
-        schedule_cache = session.query(ScheduleCache).filter(ScheduleCache.group_id == group_id,
-                                                             ScheduleCache.week == week).one_or_none()
-
-        new_cache = ScheduleCache(
-            group_id=group_id,
-            week=week,
-            text=text,
-            markup=markup
-        )
-        session.add(new_cache)
-        session.commit()
-        session.close()
-
 
 def clear_schedule_cache():
     """clears schedule cache stored in db"""

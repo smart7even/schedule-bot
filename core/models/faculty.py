@@ -13,17 +13,6 @@ class Faculty(Base):
 
     groups = relationship("Group")
 
-    @staticmethod
-    def get_all():
-        """Gets all faculties stored in db"""
-        session = Session()
-
-        faculties = session.query(Faculty).all()
-
-        session.close()
-
-        return faculties
-
     def get_groups(self):
         """returns groups that belong to the faculty"""
         return self.groups

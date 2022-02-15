@@ -1,11 +1,15 @@
+from core.repositories.faculty_repository import FacultyRepository
+from core.repositories.group_repository import GroupRepository
+from core.repositories.user_repository import UserRepository
 from core.types.button import ActionTypes
 from core.button.markup import create_group_buttons, create_faculty_buttons, create_course_buttons
 from core.types.response import DefaultResponse
-from core.models.user import User
 from core.models.group import Group
 from core.models.faculty import Faculty
 
 from telegram import InlineKeyboardMarkup
+
+from db import Session
 
 
 class ButtonActions:
@@ -18,11 +22,16 @@ class ButtonActions:
         :param user_id: user id in Telegram
         :return: DefaultResponse object
         """
-        user = User.get_user_by_id(user_id)
-        user.set_group(group_id)
+        session = Session()
+        user_repository = UserRepository(session)
+        user = user_repository.get_user_by_id(user_id)
+        user_repository.set_group(user.id, group_id)
+        session.commit()
 
         response = DefaultResponse()
-        response.text = Group.get_group_by_id(group_id).name
+        group_repository = GroupRepository(session)
+        response.text = group_repository.get_group_by_id(group_id).name
+        session.close()
 
         return response
 
@@ -32,7 +41,10 @@ class ButtonActions:
         :param action: Action that will be handled by buttons
         :return: telegram.InlineKeyBoardMarkup object
         """
-        faculties = Faculty.get_all()
+        session = Session()
+        faculty_repository = FacultyRepository(session)
+        faculties = faculty_repository.get_all()
+        session.close()
         markup = create_faculty_buttons(faculties, action)
 
         return markup
@@ -44,8 +56,9 @@ class ButtonActions:
         :param action: Action that will be handled by buttons
         :return: telegram.InlineKeyBoardMarkup object
         """
-        courses = Group.get_courses_in_faculty(faculty_id)
-        print(courses)
+        session = Session()
+        group_repository = GroupRepository(session)
+        courses = group_repository.get_courses_in_faculty(faculty_id)
         markup = create_course_buttons(courses, faculty_id, action)
 
         return markup
@@ -58,7 +71,9 @@ class ButtonActions:
         :param action: Action that will be handled by buttons
         :return: telegram.InlineKeyBoardMarkup object
         """
-        groups = Group.get_groups_by_faculty_and_course(faculty_id, course)
+        session = Session()
+        group_repository = GroupRepository(session)
+        groups = group_repository.get_groups_by_faculty_and_course(faculty_id, course)
         markup = create_group_buttons(groups, action)
 
         return markup

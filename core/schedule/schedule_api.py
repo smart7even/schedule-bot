@@ -4,8 +4,7 @@ from typing import Optional
 from telegram import InlineKeyboardMarkup
 
 from core.models.current_week import get_current_week
-from core.models.group import Group
-from core.models.schedule_cache import ScheduleCache
+from core.repositories.group_repository import GroupRepository
 from core.repositories.schedule_cache_repository import ScheduleCacheRepository
 from core.repositories.user_repository import UserRepository
 from core.types.response import DefaultResponse
@@ -21,9 +20,10 @@ def get_schedule(group_id: int, week: Optional[int] = None) -> DefaultResponse:
     :param week: study week number from the start of study year
     :return: DefaultResponse object
     """
-    group = Group.get_group_by_id(group_id)
-
     session = Session()
+    group_repository = GroupRepository(session)
+    group = group_repository.get_group_by_id(group_id)
+
     schedule_cache_repository = ScheduleCacheRepository(session)
     schedule_cache = schedule_cache_repository.get(group_id=group_id, week=week)
 
@@ -63,5 +63,6 @@ def get_user_schedule(user_id: int) -> DefaultResponse:
     current_week = get_current_week().week
 
     response = get_schedule(user.group_id, current_week)
+    session.close()
 
     return response

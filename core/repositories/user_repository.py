@@ -24,6 +24,18 @@ class UserRepository:
         session.add(new_user)
         session.commit()
         session.refresh(new_user)
-        session.close()
 
         return new_user
+
+    def set_group(self, user_id: int, group_id: int):
+        """
+        Sets user group in db
+        :param user_id: user id
+        :param group_id: group id in the university site
+        """
+        session = self.session
+
+        user = session.query(User).filter(User.id == user_id).one()
+        user.group_id = group_id
+
+        session.add(user)
