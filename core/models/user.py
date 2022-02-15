@@ -1,6 +1,5 @@
 from sqlalchemy import Column, Integer, ForeignKey
 
-from core.models.group import Group
 from db import Base, Session
 
 

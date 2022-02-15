@@ -5,12 +5,12 @@ import time
 from multiprocessing import Process
 from threading import Timer
 
-from core.button.button_actions import ButtonActions
 from core.repositories.user_repository import UserRepository
-from core.schedule.schedule_api import get_user_schedule
 from core.button.button_handlers import handle_set_group_btn, handle_get_schedule_btn, handle_faculty_btn, \
     handle_course_btn, \
     handle_schedule_btns
+from core.services.button_actions_service import ButtonActionsService
+from core.services.schedule_service import ScheduleService
 from core.types.response import DefaultResponse
 from db import Session
 from core.models.current_week import CurrentWeek
@@ -59,13 +59,13 @@ def offer_help(update: Update, context: CallbackContext):
 def handle_schedule_menu(update: Update, context: CallbackContext):
     response = DefaultResponse()
     response.text = "Выберите факультет"
-    response.markup = ButtonActions.get_faculties_choice_form(ActionTypes.GET_SCHEDULE)
+    response.markup = ButtonActionsService(Session()).get_faculties_choice_form(ActionTypes.GET_SCHEDULE)
 
     update.message.reply_text(text=response.text, reply_markup=response.markup)
 
 
 def set_group(update: Update, context: CallbackContext):
-    markup = ButtonActions.get_faculties_choice_form(ActionTypes.SET_USER_GROUP)
+    markup = ButtonActionsService(Session()).get_faculties_choice_form(ActionTypes.SET_USER_GROUP)
 
     update.message.reply_text(text="Выберите факультет", reply_markup=markup)
 
@@ -117,7 +117,7 @@ def handle_buttons(update: Update, context: CallbackContext):
 
 
 def send_user_schedule(update: Update, context: CallbackContext):
-    response = get_user_schedule(update.message.from_user.id)
+    response = ScheduleService(Session()).get_user_schedule(update.message.from_user.id)
 
     if not response.is_valid():
         response.text = "Вы не выбрали группу. Нажмите на /set_group и выберите свою группу"

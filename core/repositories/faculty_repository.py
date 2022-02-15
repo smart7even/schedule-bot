@@ -1,7 +1,6 @@
 from typing import List
 
 from core.models.faculty import Faculty
-from core.models.schedule_cache import ScheduleCache
 from db import Session
 
 

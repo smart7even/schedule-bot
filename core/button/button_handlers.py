@@ -3,9 +3,10 @@ from typing import Optional
 
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
-from core.button.button_actions import ButtonActions
 from core.repositories.group_repository import GroupRepository
 from core.repositories.schedule_cache_repository import ScheduleCacheRepository
+from core.services.button_actions_service import ButtonActionsService
+from core.services.schedule_service import ScheduleService
 from core.types.button import BtnTypes, ActionTypes
 from core.types.response import DefaultResponse, AnswerResponse
 from core.button.markup import create_schedule_folded_markup, create_schedule_unfolded_markup, transform_markup_to_str
@@ -13,7 +14,6 @@ from db import Session
 from core.models.current_week import get_current_week
 from core.request import unecon_request
 from core.schedule.schedule import Schedule
-from core.schedule.schedule_api import get_schedule
 from core.schedule.site_parser import UneconParser
 
 
@@ -99,7 +99,7 @@ def handle_set_group_btn(group_id: int, user_id: int) -> AnswerResponse:
     :return: AnswerResponse object
     """
     response = AnswerResponse()
-    set_group_response = ButtonActions.set_group(group_id, user_id)
+    set_group_response = ButtonActionsService(Session()).set_group(group_id, user_id)
     response.text = f"Группа {set_group_response.text} установлена!"
     return response
 
@@ -111,7 +111,7 @@ def handle_get_schedule_btn(group_id) -> DefaultResponse:
     """
     current_week = get_current_week().week
 
-    response = get_schedule(group_id, current_week)
+    response = ScheduleService(Session()).get_schedule(group_id, current_week)
     return response
 
 
@@ -122,7 +122,7 @@ def handle_faculty_btn(callback_action_type: ActionTypes, faculty_id: int) -> De
     :return: DefaultResponse object
     """
     response = DefaultResponse()
-    response.markup = ButtonActions.get_courses_choice_form(faculty_id, callback_action_type)
+    response.markup = ButtonActionsService(Session()).get_courses_choice_form(faculty_id, callback_action_type)
     response.text = "Выберите курс"
 
     return response
@@ -136,7 +136,7 @@ def handle_course_btn(callback_action_type: ActionTypes, faculty_id: int, course
     :return: DefaultResponse object
     """
     response = DefaultResponse()
-    response.markup = ButtonActions.get_group_choice_form(faculty_id, course, callback_action_type)
+    response.markup = ButtonActionsService(Session()).get_group_choice_form(faculty_id, course, callback_action_type)
     response.text = "Выберите группу"
 
     return response
