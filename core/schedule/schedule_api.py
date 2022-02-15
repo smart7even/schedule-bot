@@ -24,8 +24,8 @@ def get_schedule(group_id: int, week: Optional[int] = None) -> DefaultResponse:
     group = Group.get_group_by_id(group_id)
 
     session = Session()
-    schedule_cache = session.query(ScheduleCache).filter(ScheduleCache.group_id == group_id,
-                                                         ScheduleCache.week == week).one_or_none()
+    schedule_cache_repository = ScheduleCacheRepository(session)
+    schedule_cache = schedule_cache_repository.get(group_id=group_id, week=week)
 
     response = DefaultResponse()
     if schedule_cache:
@@ -35,7 +35,6 @@ def get_schedule(group_id: int, week: Optional[int] = None) -> DefaultResponse:
         if group:
             schedule_creator = ScheduleCreator(group_id, week)
             response = schedule_creator.form_response(group.name)
-            schedule_cache_repository = ScheduleCacheRepository(session)
             schedule_cache_repository.add(
                 group_id=group_id,
                 week=week,
