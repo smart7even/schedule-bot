@@ -65,7 +65,7 @@ class UneconParser:
         """
         soup = BeautifulSoup(self.html_content, features="html.parser")
 
-        week = r"w=(\d{2})"
+        week = r"w=(\d{1,2})"
 
         prev_week_link = soup.find("span", {"class": "prev"}).a["href"]
         next_week_link = soup.find("span", {"class": "next"}).a["href"]
