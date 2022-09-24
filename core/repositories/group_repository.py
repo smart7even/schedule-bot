@@ -12,6 +12,19 @@ class GroupRepository:
         """Gets group by id"""
         return self.session.query(Group).filter(Group.id == group_id).one_or_none()
 
+    def get(self, faculty_id: Optional[int] = None, course: Optional[int] = None) -> Optional[Group]:
+        """Gets group by id"""
+
+        query_parameters = []
+
+        if faculty_id:
+            query_parameters.append(Group.faculty_id == faculty_id)
+
+        if course:
+            query_parameters.append(Group.course == course)
+
+        return self.session.query(Group).filter(*query_parameters).all()
+
     def get_all(self) -> List[Group]:
         """Gets all groups stored in db"""
         return self.session.query(Group).all()

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import FastAPI
 
 from core.models import group
@@ -28,10 +30,10 @@ async def get_faculty_by_id(faculty_id: int):
 
 
 @app.get("/group")
-async def get_groups():
+async def get_groups(course: Optional[int] = None, faculty_id: Optional[int] = None):
     session = Session()
     group_repository = GroupRepository(session)
-    groups = group_repository.get_all()
+    groups = group_repository.get(course=course, faculty_id=faculty_id)
 
     return {"groups": groups}
 
