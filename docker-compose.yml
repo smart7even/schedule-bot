@@ -3,7 +3,7 @@ services:
     build: .
     restart: always
     environment:
-      - SCHEDULE_BOT_TOKEN=1687593023:AAHt-sOFxPDgoTZKDsmYn2Lkr7C1FD6nSJo
+      - SCHEDULE_BOT_TOKEN=${SCHEDULE_BOT_TOKEN}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
   db:
     image: postgres:latest
