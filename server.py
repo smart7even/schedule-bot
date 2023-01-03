@@ -4,6 +4,8 @@ from fastapi import FastAPI
 
 from core.repositories.faculty_repository import FacultyRepository
 from core.repositories.group_repository import GroupRepository
+from core.request import unecon_request
+from core.schedule.site_parser import UneconParser
 from db import Session
 
 app = FastAPI()
@@ -43,6 +45,21 @@ async def get_group_by_id(group_id: int):
     group = group_repository.get_group_by_id(group_id)
 
     return group
+
+
+@app.get("/group/{group_id}/schedule")
+async def get_group_schedule(group_id: int, week: Optional[int] = None):
+    page = unecon_request(group_id=group_id, week=week)
+
+    if page.status_code == 200:
+        page_parser = UneconParser(page.text)
+        lessons = page_parser.parse_page()
+
+        dict_lessons = [lesson._asdict() for lesson in lessons]
+
+        return dict_lessons
+
+    return []
 
 
 @app.get("/hello/{name}")
