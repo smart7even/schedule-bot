@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime
 
 from fastapi import FastAPI
 
@@ -55,11 +56,38 @@ async def get_group_schedule(group_id: int, week: Optional[int] = None):
         page_parser = UneconParser(page.text)
         lessons = page_parser.parse_page()
 
-        dict_lessons = [lesson._asdict() for lesson in lessons]
+        dict_lessons = []
 
-        return dict_lessons
+        for lesson in lessons:
+            day_pattern = '%d.%m.%Y'
+            time_pattern = '%H:%M'
+            datetime_pattern = f'{time_pattern} {day_pattern}'
 
-    return []
+            day = datetime.strptime(lesson.day, day_pattern)
+            time: list[str] = lesson.time.replace(" ", "").split('-')
+
+            start_time = datetime.strptime(f'{time[0]} {lesson.day}', datetime_pattern)
+            end_time = datetime.strptime(f'{time[1]} {lesson.day}', datetime_pattern)
+
+            dict_lesson = {
+                'name': lesson.name,
+                'day': day.isoformat(),
+                'day_of_week': lesson.day_of_week,
+                'start': start_time,
+                'end': end_time,
+                'professor': lesson.professor,
+                'location': lesson.location,
+            }
+
+            dict_lessons.append(dict_lesson)
+
+        return {
+            'lessons': dict_lessons
+        }
+
+    return {
+        'lessons': []
+    }
 
 
 @app.get("/hello/{name}")
