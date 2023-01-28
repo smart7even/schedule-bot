@@ -55,6 +55,7 @@ async def get_group_schedule(group_id: int, week: Optional[int] = None):
     if page.status_code == 200:
         page_parser = UneconParser(page.text)
         lessons = page_parser.parse_page()
+        week = page_parser.get_current_week_number()
 
         dict_lessons = []
 
@@ -82,6 +83,7 @@ async def get_group_schedule(group_id: int, week: Optional[int] = None):
             dict_lessons.append(dict_lesson)
 
         return {
+            'week': week,
             'lessons': dict_lessons
         }
 
