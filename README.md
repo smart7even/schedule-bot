@@ -16,3 +16,8 @@ Now you need to create `.env` file in root of the project and specify key `DATAB
 Open project root in console and make database migrations entering command `alembic upgrade head` and then fill your database running `bot_init.py` script.
 
 Now you can use application running `main.py` script.
+
+### Server run
+To run api server in dev mode use following command
+
+`uvicorn server:app --env-file .env --reload --host 0.0.0.0`
