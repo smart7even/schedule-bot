@@ -1,7 +1,26 @@
 services:
   bot:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile-bot
     restart: always
+    environment:
+      - SCHEDULE_BOT_TOKEN=${SCHEDULE_BOT_TOKEN}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile-server
+    restart: always
+    ports:
+      - 8000:8000
+    environment:
+      - SCHEDULE_BOT_TOKEN=${SCHEDULE_BOT_TOKEN}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+  initializer:
+    build:
+      context: .
+      dockerfile: Dockerfile-initializer
     environment:
       - SCHEDULE_BOT_TOKEN=${SCHEDULE_BOT_TOKEN}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
