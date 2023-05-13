@@ -1,6 +1,6 @@
 import re
 from bs4 import BeautifulSoup
-from typing import List
+from typing import List, Optional
 
 from core.types.lesson import Lesson
 
@@ -42,15 +42,18 @@ class UneconParser:
 
                 lesson_location_span = tr.find("span", {"class": "aud"})
 
+                lesson_location: Optional[str] = None
+
                 if lesson_location_span.text:
                     lesson_location = lesson_location_span.text.strip()
-                else:
-                    lesson_location = None
 
                 lessons_location_remote_span = tr.find("span", {"class": "prim"})
 
                 if lessons_location_remote_span.text:
                     lesson_location = lessons_location_remote_span.text
+
+                if lesson_location:
+                    lesson_location = lesson_location.replace('ПОКАЗАТЬ НА СХЕМЕ', '')
 
                 lesson = Lesson(lesson_name, lesson_day,
                                 lesson_day_of_week, lesson_time, lesson_professor, lesson_location)
