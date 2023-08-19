@@ -7,6 +7,8 @@ from core.repositories.faculty_repository import FacultyRepository
 from core.repositories.group_repository import GroupRepository
 from core.request import unecon_request
 from core.schedule.site_parser import UneconParser
+from core.types.lesson import Lesson
+from core.utils.date_utils import get_study_week_number
 from db import Session
 
 app = FastAPI()
@@ -57,30 +59,7 @@ async def get_group_schedule(group_id: int, week: Optional[int] = None):
         lessons = page_parser.parse_page()
         week = page_parser.get_current_week_number()
 
-        dict_lessons = []
-
-        for lesson in lessons:
-            day_pattern = '%d.%m.%Y'
-            time_pattern = '%H:%M'
-            datetime_pattern = f'{time_pattern} {day_pattern}'
-
-            day = datetime.strptime(lesson.day, day_pattern)
-            time: list[str] = lesson.time.replace(" ", "").split('-')
-
-            start_time = datetime.strptime(f'{time[0]} {lesson.day}', datetime_pattern)
-            end_time = datetime.strptime(f'{time[1]} {lesson.day}', datetime_pattern)
-
-            dict_lesson = {
-                'name': lesson.name,
-                'day': day.isoformat(),
-                'day_of_week': lesson.day_of_week,
-                'start': start_time,
-                'end': end_time,
-                'professor': lesson.professor,
-                'location': lesson.location,
-            }
-
-            dict_lessons.append(dict_lesson)
+        dict_lessons = lessons_to_dict(lessons)
 
         return {
             'week': week,
@@ -92,6 +71,68 @@ async def get_group_schedule(group_id: int, week: Optional[int] = None):
     }
 
 
+@app.get("/group/{group_id}/lessons/next")
+async def get_next_lessons(group_id: int, after_date: Optional[str] = None):
+    current_date: Optional[datetime] = None
+
+    now_date = datetime.now()
+
+    if after_date is not None:
+        current_date = datetime.fromisoformat(after_date)
+    else:
+        current_date = now_date
+
+    week = get_study_week_number(current_date, now_date)
+
+    page = unecon_request(group_id=group_id, week=week)
+
+    if page.status_code != 200:
+        return {
+            'lessons': []
+        }
+
+    page_parser = UneconParser(page.text)
+    lessons = page_parser.parse_page()
+    week = page_parser.get_current_week_number()
+
+    sorted_lessons = list(sorted(lessons, key=lambda l: l.get_start_date()))
+
+    for i in range(len(sorted_lessons)):
+        lesson = sorted_lessons[i]
+
+        if lesson.get_start_date() > current_date:
+            return {
+                'lessons': lessons_to_dict(sorted_lessons[i:])
+            }
+
+    return {
+        'lessons': []
+    }
+
+
 @app.get("/hello/{name}")
 async def say_hello(name: str):
     return {"message": f"Hello {name}"}
+
+
+def lessons_to_dict(lessons: list[Lesson]) -> list[dict]:
+    dict_lessons = []
+
+    for lesson in lessons:
+        day = lesson.get_day_start_date()
+        start_time = lesson.get_start_date()
+        end_time = lesson.get_end_date()
+
+        dict_lesson = {
+            'name': lesson.name,
+            'day': day.isoformat(),
+            'day_of_week': lesson.day_of_week,
+            'start': start_time,
+            'end': end_time,
+            'professor': lesson.professor,
+            'location': lesson.location,
+        }
+
+        dict_lessons.append(dict_lesson)
+
+    return dict_lessons
