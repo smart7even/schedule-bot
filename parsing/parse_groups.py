@@ -15,7 +15,12 @@ def fill_groups(faculty_id: int, course: int):
     :param faculty_id: faculty id in the university site
     :param course: course number
     """
-    page = requests.get("https://rasp.unecon.ru/raspisanie.php", params={"fakultet": faculty_id, "kurs": course})
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/39.0.2171.95 Safari/537.36 '
+    }
+
+    page = requests.get("https://rasp.unecon.ru/raspisanie.php", params={"fakultet": faculty_id, "kurs": course}, headers=headers)
 
     if page.status_code == 200:
         soup = BeautifulSoup(page.content, features="html.parser")
@@ -45,7 +50,12 @@ def fill_groups(faculty_id: int, course: int):
 
 def fill_faculties():
     """Fill db with faculties"""
-    page = requests.get("https://rasp.unecon.ru")
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/39.0.2171.95 Safari/537.36 '
+    }
+
+    page = requests.get("https://rasp.unecon.ru", headers=headers)
 
     if page.status_code == 200:
         soup = BeautifulSoup(page.content, features="html.parser")
@@ -70,7 +80,12 @@ def get_faculty_courses(faculty_id: int):
     """
     courses = []
 
-    page = requests.get("https://rasp.unecon.ru", {"fakultet": faculty_id})
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/39.0.2171.95 Safari/537.36 '
+    }
+
+    page = requests.get("https://rasp.unecon.ru", {"fakultet": faculty_id}, headers=headers)
 
     if page.status_code == 200:
         soup = BeautifulSoup(page.content, features="html.parser")
