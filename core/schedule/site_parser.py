@@ -70,10 +70,16 @@ class UneconParser:
 
         week = r"w=(\d{1,2})"
 
-        prev_week_link = soup.find("span", {"class": "prev"}).a["href"]
-        next_week_link = soup.find("span", {"class": "next"}).a["href"]
+        prev_week_link = None
+        prev_week_number = 0
 
-        prev_week_number = int(re.search(week, prev_week_link).groups()[0])
+        try:
+            prev_week_link = soup.find("span", {"class": "prev"}).a["href"]
+            prev_week_number = int(re.search(week, prev_week_link).groups()[0])
+            # next_week_link = soup.find("span", {"class": "next"}).a["href"]
+        except Exception as e:
+            print(e)
+
         current_week_number = prev_week_number + 1
 
         return current_week_number
