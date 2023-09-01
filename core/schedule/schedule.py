@@ -54,6 +54,7 @@ class Schedule:
 
                 schedule_list.append(Bold(lesson.time))
                 schedule_list.append(wrap_with_new_lines(Plain(lesson.name)))
+                schedule_list.append(wrap_with_new_lines(Plain(lesson.location)))
             else:
                 if is_detail_mode:
                     schedule_list.append(NewLine())
