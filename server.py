@@ -73,7 +73,7 @@ async def get_group_schedule(group_id: int, week: Optional[int] = None):
 
 @app.get("/group/{group_id}/lessons/next")
 async def get_next_lessons(group_id: int, after_date: Optional[str] = None):
-    current_date: Optional[datetime] = None
+    current_date = None
 
     now_date = datetime.now()
 
@@ -92,18 +92,37 @@ async def get_next_lessons(group_id: int, after_date: Optional[str] = None):
         }
 
     page_parser = UneconParser(page.text)
+
+    lessons = page_parser.parse_page()
+
+    week = page_parser.get_current_week_number()
+
+    lessons_after_date = get_lessons_after_date(lessons, current_date)
+
+    print(lessons_after_date)
+
+    if len(lessons_after_date) != 0:
+        return {
+            'lessons': lessons_to_dict(lessons_after_date)
+        }
+
+    page = unecon_request(group_id=group_id, week=week + 1)
+
+    if page.status_code != 200:
+        return {
+            'lessons': []
+        }
+
+    page_parser = UneconParser(page.text)
     lessons = page_parser.parse_page()
     week = page_parser.get_current_week_number()
 
-    sorted_lessons = list(sorted(lessons, key=lambda l: l.get_start_date()))
+    lessons_after_date = get_lessons_after_date(lessons, current_date)
 
-    for i in range(len(sorted_lessons)):
-        lesson = sorted_lessons[i]
-
-        if lesson.get_start_date() > current_date:
-            return {
-                'lessons': lessons_to_dict(sorted_lessons[i:])
-            }
+    if len(lessons_after_date) != 0:
+        return {
+            'lessons': lessons_to_dict(lessons_after_date)
+        }
 
     return {
         'lessons': []
@@ -113,6 +132,18 @@ async def get_next_lessons(group_id: int, after_date: Optional[str] = None):
 @app.get("/hello/{name}")
 async def say_hello(name: str):
     return {"message": f"Hello {name}"}
+
+
+def get_lessons_after_date(lessons: list[Lesson], date: datetime) -> list[Lesson]:
+    sorted_lessons = list(sorted(lessons, key=lambda l: l.get_start_date()))
+
+    for i in range(len(sorted_lessons)):
+        lesson = sorted_lessons[i]
+
+        if lesson.get_start_date() > date:
+            return sorted_lessons[i:]
+
+    return []
 
 
 def lessons_to_dict(lessons: list[Lesson]) -> list[dict]:
