@@ -38,12 +38,12 @@ class ScheduleService:
             if group:
                 schedule_creator = ScheduleCreator(group_id, week)
                 response = schedule_creator.form_response(group.name)
-                schedule_cache_repository.add(
-                    group_id=group_id,
-                    week=week,
-                    text=response.text,
-                    markup=transform_markup_to_str(response.markup)
-                )
+                # schedule_cache_repository.add(
+                #     group_id=group_id,
+                #     week=week,
+                #     text=response.text,
+                #     markup=transform_markup_to_str(response.markup)
+                # )
                 session.close()
             else:
                 response = DefaultResponse()

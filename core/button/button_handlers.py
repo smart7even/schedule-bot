@@ -171,12 +171,12 @@ def handle_schedule_btns(
             button_click_response.markup = InlineKeyboardMarkup.de_json(json.loads(schedule_cache.markup), bot=None)
         else:
             button_click_response = handle_change_week_btn(schedule, group_id, week)
-            schedule_cache_repository.add(
-                group_id=group_id,
-                week=week,
-                text=button_click_response.text,
-                markup=transform_markup_to_str(button_click_response.markup)
-            )
+            # schedule_cache_repository.add(
+            #     group_id=group_id,
+            #     week=week,
+            #     text=button_click_response.text,
+            #     markup=transform_markup_to_str(button_click_response.markup)
+            # )
     elif callback_btn_type == BtnTypes.MORE:
         button_click_response = handle_more_btn(schedule, group_id, week)
     elif callback_btn_type == BtnTypes.GET_FULL_DAY:
