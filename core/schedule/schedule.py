@@ -48,17 +48,13 @@ class Schedule:
             else:
                 is_new_day = False
 
-            if prev_lesson_time != lesson.time or is_new_day:
-                if is_detail_mode:
-                    schedule_list.append(NewLine())
-
-                schedule_list.append(Bold(lesson.time))
-                schedule_list.append(wrap_with_new_lines(Plain(lesson.name)))
-                schedule_list.append(Plain(lesson.location.strip().replace('\n', '')))
+            if is_detail_mode:
                 schedule_list.append(NewLine())
-            else:
-                if is_detail_mode:
-                    schedule_list.append(NewLine())
+
+            schedule_list.append(Bold(lesson.time))
+            schedule_list.append(wrap_with_new_lines(Plain(lesson.name)))
+            schedule_list.append(Plain(lesson.location.strip().replace('\n', '')))
+            schedule_list.append(NewLine())
 
             if is_detail_mode:
                 schedule_list.append(Plain(f"Преподаватель: {lesson.professor}"))
