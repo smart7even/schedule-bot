@@ -1,5 +1,7 @@
+import re
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -37,3 +39,8 @@ class Lesson:
         day_pattern = '%d.%m.%Y'
         day = datetime.strptime(self.day, day_pattern)
         return day
+
+    def get_lesson_type(self) -> Optional[str]:
+        match = re.search(r'\((.*?)\)$', self.name)
+
+        return match.group(1) if match else None
