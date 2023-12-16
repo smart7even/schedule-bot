@@ -3,4 +3,3 @@ config.yaml
 __pycache__
 venv
 .idea
-dbdata

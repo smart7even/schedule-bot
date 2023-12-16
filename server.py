@@ -163,7 +163,8 @@ def lessons_to_dict(lessons: list[Lesson]) -> list[dict]:
             'end': end_time,
             'professor': lesson.professor,
             'location': lesson.location,
-            'lesson_type': lesson.get_lesson_type()
+            'lesson_type': lesson.get_lesson_type(),
+            'is_elective': lesson.get_is_elective()
         }
 
         dict_lessons.append(dict_lesson)

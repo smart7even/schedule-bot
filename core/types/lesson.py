@@ -41,6 +41,9 @@ class Lesson:
         return day
 
     def get_lesson_type(self) -> Optional[str]:
-        match = re.search(r'\((.*?)\)$', self.name)
+        match = re.search(r'\(([^()]*)\)$', self.name)
 
         return match.group(1) if match else None
+
+    def get_is_elective(self) -> Optional[bool]:
+        return self.name.startswith("Выбор ")
