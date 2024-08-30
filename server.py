@@ -4,6 +4,7 @@ from datetime import datetime
 
 from fastapi import FastAPI
 
+from core.repositories.asset_repository import AssetRepository
 from core.repositories.faculty_repository import FacultyRepository
 from core.repositories.group_repository import GroupRepository
 from core.request import unecon_request
@@ -131,6 +132,15 @@ async def get_next_lessons(group_id: int, after_date: Optional[str] = None):
         'lessons': []
     }
 
+@app.get("/asset/{asset_id}")
+async def get_asset(asset_id: str):
+    session = Session()
+
+    asset_repository = AssetRepository(session)
+
+    asset = asset_repository.get_by_id(asset_id)
+
+    return asset
 
 @app.get("/hello/{name}")
 async def say_hello(name: str):
@@ -172,3 +182,4 @@ def lessons_to_dict(lessons: list[Lesson]) -> list[dict]:
         dict_lessons.append(dict_lesson)
 
     return dict_lessons
+

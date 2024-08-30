@@ -8,6 +8,9 @@ Base = declarative_base()
 
 connect_url = os.getenv("DATABASE_URL")
 
+if connect_url is None:
+    raise ValueError("DATABASE_URL environment variable not set")
+
 engine = create_engine(connect_url, echo=True)
 Base.metadata.create_all(bind=engine)
 
