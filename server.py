@@ -96,7 +96,9 @@ async def get_next_lessons(group_id: int, after_date: Optional[str] = None):
 
     lessons = page_parser.parse_page()
 
-    week = page_parser.get_current_week_number()
+    # get remainder of 52 (number of weeks in year) because api gives 53
+    # when last study year ends but new year has not started yet
+    week = page_parser.get_current_week_number() % 52
 
     lessons_after_date = get_lessons_after_date(lessons, current_date)
 
