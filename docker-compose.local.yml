@@ -7,6 +7,7 @@ services:
     environment:
       - SCHEDULE_BOT_TOKEN=${SCHEDULE_BOT_TOKEN}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - TZ=Europe/Moscow
   server:
     build:
       context: .
@@ -17,6 +18,7 @@ services:
     environment:
       - SCHEDULE_BOT_TOKEN=${SCHEDULE_BOT_TOKEN}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - TZ=Europe/Moscow
   initializer:
     build:
       context: .
@@ -24,6 +26,7 @@ services:
     environment:
       - SCHEDULE_BOT_TOKEN=${SCHEDULE_BOT_TOKEN}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - TZ=Europe/Moscow
   db:
     image: postgres:15.4
     restart: always
