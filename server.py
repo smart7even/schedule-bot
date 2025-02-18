@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from core.repositories.asset_repository import AssetRepository
 from core.repositories.faculty_repository import FacultyRepository
 from core.repositories.group_repository import GroupRepository
+from core.repositories.vacancy_repository import VacancyRepository
 from core.request import unecon_request
 from core.schedule.site_parser import UneconParser
 from core.types.lesson import Lesson
@@ -132,6 +133,7 @@ async def get_next_lessons(group_id: int, after_date: Optional[str] = None):
         'lessons': []
     }
 
+
 @app.get("/asset/{asset_id}")
 async def get_asset(asset_id: str):
     session = Session()
@@ -141,6 +143,18 @@ async def get_asset(asset_id: str):
     asset = asset_repository.get_by_id(asset_id)
 
     return asset
+
+
+@app.get("/vacancy")
+async def get_vacancies():
+    session = Session()
+
+    vacancy_repository = VacancyRepository(session)
+
+    vacancies = vacancy_repository.get_all()
+
+    return vacancies
+
 
 @app.get("/hello/{name}")
 async def say_hello(name: str):
@@ -182,4 +196,3 @@ def lessons_to_dict(lessons: list[Lesson]) -> list[dict]:
         dict_lessons.append(dict_lesson)
 
     return dict_lessons
-
