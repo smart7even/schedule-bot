@@ -8,7 +8,7 @@ from core.repositories.asset_repository import AssetRepository
 from core.repositories.faculty_repository import FacultyRepository
 from core.repositories.group_repository import GroupRepository
 from core.repositories.vacancy_repository import VacancyRepository
-from core.request import unecon_request
+from core.request import unecon_professor_request, unecon_request
 from core.schedule.site_parser import UneconParser
 from core.types.lesson import Lesson
 from core.utils.date_utils import get_study_week_number
@@ -56,6 +56,25 @@ async def get_group_by_id(group_id: int):
 @app.get("/group/{group_id}/schedule")
 async def get_group_schedule(group_id: int, week: Optional[int] = None):
     page = unecon_request(group_id=group_id, week=week)
+
+    if page.status_code == 200:
+        page_parser = UneconParser(page.text)
+        lessons = page_parser.parse_page()
+        week = page_parser.get_current_week_number()
+
+        dict_lessons = lessons_to_dict(lessons)
+
+        return {
+            'week': week,
+            'lessons': dict_lessons
+        }
+
+    return {
+        'lessons': []
+    }
+
+def get_professor_schedule(professor_id: int):
+    page = unecon_professor_request(professor_id=professor_id)
 
     if page.status_code == 200:
         page_parser = UneconParser(page.text)
@@ -196,3 +215,6 @@ def lessons_to_dict(lessons: list[Lesson]) -> list[dict]:
         dict_lessons.append(dict_lesson)
 
     return dict_lessons
+
+if __name__ == '__main__':
+    print(get_professor_schedule(8806))

@@ -1,4 +1,5 @@
 import re
+import traceback
 from bs4 import BeautifulSoup
 from typing import List, Optional
 
@@ -40,6 +41,12 @@ class UneconParser:
                 else:
                     lesson_professor = None
 
+                lesson_group_span = tr.find("span", {"class": "group"})
+                if lesson_group_span:
+                    lesson_group = lesson_group_span.text
+                else:
+                    lesson_group = None
+
                 lesson_location_span = tr.find("span", {"class": "aud"})
 
                 lesson_location: Optional[str] = None
@@ -56,7 +63,7 @@ class UneconParser:
                     lesson_location = lesson_location.replace('ПОКАЗАТЬ НА СХЕМЕ', '')
 
                 lesson = Lesson(lesson_name, lesson_day,
-                                lesson_day_of_week, lesson_time, lesson_professor, lesson_location)
+                                lesson_day_of_week, lesson_time, lesson_professor, lesson_location, lesson_group)
                 lessons.append(lesson)
 
         return lessons
@@ -79,6 +86,7 @@ class UneconParser:
             # next_week_link = soup.find("span", {"class": "next"}).a["href"]
         except Exception as e:
             print(e)
+            print(traceback.format_exc())
 
         current_week_number = prev_week_number + 1
 

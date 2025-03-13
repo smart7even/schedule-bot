@@ -12,6 +12,7 @@ class Lesson:
     time: str
     professor: str
     location: str
+    group: str
 
     def get_start_date(self) -> datetime:
         day_pattern = '%d.%m.%Y'
