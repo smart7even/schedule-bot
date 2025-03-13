@@ -2,6 +2,7 @@ import re
 import traceback
 from bs4 import BeautifulSoup
 from typing import List, Optional
+from urllib.parse import urlparse, parse_qs
 
 from core.types.lesson import Lesson
 
@@ -38,8 +39,17 @@ class UneconParser:
                 lesson_professor_span = tr.find("span", {"class": "prepod"})
                 if lesson_professor_span.a:
                     lesson_professor = lesson_professor_span.a.text
+                    lesson_professor_id_href = lesson_professor_span.a["href"]
+                    parsed_uri = urlparse(lesson_professor_id_href)
+                    # Extract the query parameters
+                    query_params = parse_qs(parsed_uri.query)
+                    # Get the value of the 'p' parameter
+                    lesson_professor_id_str = query_params.get('p', [None])[0]
+                    lesson_professor_id = int(lesson_professor_id_str) if lesson_professor_id_str else None
+                    # Print the value
                 else:
                     lesson_professor = None
+                    lesson_professor_id = None
 
                 lesson_group_span = tr.find("span", {"class": "group"})
                 if lesson_group_span:
@@ -63,7 +73,8 @@ class UneconParser:
                     lesson_location = lesson_location.replace('ПОКАЗАТЬ НА СХЕМЕ', '')
 
                 lesson = Lesson(lesson_name, lesson_day,
-                                lesson_day_of_week, lesson_time, lesson_professor, lesson_location, lesson_group)
+                                lesson_day_of_week, lesson_time, lesson_professor,
+                                lesson_location, lesson_group, lesson_professor_id)
                 lessons.append(lesson)
 
         return lessons

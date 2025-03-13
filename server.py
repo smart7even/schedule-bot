@@ -213,6 +213,7 @@ def lessons_to_dict(lessons: list[Lesson]) -> list[dict]:
             'lesson_type': lesson.get_lesson_type(),
             'is_elective': lesson.get_is_elective(),
             'group': lesson.group,
+            'professor_id': lesson.professor_id,
         }
 
         dict_lessons.append(dict_lesson)
