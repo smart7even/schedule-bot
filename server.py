@@ -73,6 +73,8 @@ async def get_group_schedule(group_id: int, week: Optional[int] = None):
         'lessons': []
     }
 
+
+@app.get("/professor/{professor_id}/schedule")
 def get_professor_schedule(professor_id: int):
     page = unecon_professor_request(professor_id=professor_id)
 
@@ -209,12 +211,14 @@ def lessons_to_dict(lessons: list[Lesson]) -> list[dict]:
             'professor': lesson.professor,
             'location': lesson.location,
             'lesson_type': lesson.get_lesson_type(),
-            'is_elective': lesson.get_is_elective()
+            'is_elective': lesson.get_is_elective(),
+            'group': lesson.group,
         }
 
         dict_lessons.append(dict_lesson)
 
     return dict_lessons
+
 
 if __name__ == '__main__':
     print(get_professor_schedule(8806))
