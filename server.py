@@ -75,8 +75,8 @@ async def get_group_schedule(group_id: int, week: Optional[int] = None):
 
 
 @app.get("/professor/{professor_id}/schedule")
-def get_professor_schedule(professor_id: int):
-    page = unecon_professor_request(professor_id=professor_id)
+def get_professor_schedule(professor_id: int, week: Optional[int] = None):
+    page = unecon_professor_request(professor_id=professor_id, week=week)
 
     if page.status_code == 200:
         page_parser = UneconParser(page.text)
