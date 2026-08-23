@@ -128,5 +128,5 @@ def update_old_groups():
 
 
 if __name__ == "__main__":
-    fill_faculties()
-    fill_all_groups()
+    from parsing.group_sync import sync_groups
+    print(sync_groups())

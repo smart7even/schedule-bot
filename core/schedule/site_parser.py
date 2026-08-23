@@ -1,10 +1,29 @@
 import re
-import traceback
+from dataclasses import dataclass
+from datetime import datetime, date
 from bs4 import BeautifulSoup
 from typing import List, Optional
 from urllib.parse import urlparse, parse_qs
 
 from core.types.lesson import Lesson
+
+
+@dataclass(frozen=True)
+class SchedulePeriod:
+    start: date
+    end: date
+
+    @property
+    def academic_year_start(self) -> int:
+        """Return the year whose September 1 belongs to this first week."""
+        for year in range(self.start.year, self.end.year + 1):
+            september_first = date(year, 9, 1)
+            if self.start <= september_first <= self.end:
+                return year
+
+        # Non-first weeks do not contain September 1. The academic year starts
+        # in the previous calendar year for January-August dates.
+        return self.start.year if self.start.month >= 9 else self.start.year - 1
 
 
 class UneconParser:
@@ -88,17 +107,47 @@ class UneconParser:
 
         week = r"w=(\d{1,2})"
 
-        prev_week_link = None
-        prev_week_number = 0
+        previous = soup.select_one("span.prev a")
+        if previous is None:
+            return 1
 
-        try:
-            prev_week_link = soup.find("span", {"class": "prev"}).a["href"]
-            prev_week_number = int(re.search(week, prev_week_link).groups()[0])
-            # next_week_link = soup.find("span", {"class": "next"}).a["href"]
-        except Exception as e:
-            print(e)
-            print(traceback.format_exc())
+        match = re.search(week, previous.get("href", ""))
+        if match is None:
+            raise ValueError("UNECON previous-week link is invalid")
+        return int(match.group(1)) + 1
 
-        current_week_number = prev_week_number + 1
+    def get_schedule_period(self) -> SchedulePeriod:
+        """Parse the exact date interval displayed for the requested week."""
+        soup = BeautifulSoup(self.html_content, features="html.parser")
+        schedule = soup.select_one("div.rasp h1")
 
-        return current_week_number
+        if schedule is None:
+            raise ValueError("Response is not a UNECON schedule page")
+
+        match = re.search(
+            r"Расписание\s+с\s+(\d{2}\.\d{2}\.\d{4})\s+по\s+(\d{2}\.\d{2}\.\d{4})",
+            schedule.get_text(" ", strip=True),
+        )
+        if match is None:
+            raise ValueError("UNECON schedule period is missing")
+
+        return SchedulePeriod(
+            start=datetime.strptime(match.group(1), "%d.%m.%Y").date(),
+            end=datetime.strptime(match.group(2), "%d.%m.%Y").date(),
+        )
+
+    def get_schedule_subject(self) -> str:
+        """Return the group/professor label shown below the period heading."""
+        soup = BeautifulSoup(self.html_content, features="html.parser")
+        schedule = soup.select_one("div.rasp h1")
+        if schedule is None:
+            raise ValueError("Response is not a UNECON schedule page")
+
+        text = schedule.get_text(" ", strip=True)
+        match = re.search(
+            r"Расписание\s+с\s+\d{2}\.\d{2}\.\d{4}\s+по\s+\d{2}\.\d{2}\.\d{4}\s+(.+)$",
+            text,
+        )
+        if match is None:
+            raise ValueError("UNECON schedule subject is missing")
+        return match.group(1).strip()

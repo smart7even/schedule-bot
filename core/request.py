@@ -21,7 +21,12 @@ def unecon_request(group_id: int, week: Optional[int] = None):
         "w": week
     }
 
-    result = requests.get(url, params=params, headers=headers)
+    result = requests.get(
+        url,
+        params=params,
+        headers=headers,
+        timeout=(5, 20),
+    )
 
     return result
 
@@ -35,7 +40,12 @@ def unecon_professor_request(professor_id: int, week: Optional[int] = None):
         "w": week
     }
 
-    result = requests.get(url, params=params, headers=headers)
+    result = requests.get(
+        url,
+        params=params,
+        headers=headers,
+        timeout=(5, 20),
+    )
 
     return result
 

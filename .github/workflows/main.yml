@@ -11,6 +11,7 @@ env:
     BOT_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.repository }}/bot
     SERVER_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.repository }}/server
     INITIALIZER_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.repository }}/initializer
+    MAINTENANCE_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.repository }}/maintenance
 
 jobs:
     build-and-push:
@@ -27,19 +28,25 @@ jobs:
                 password: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Build Docker image for bot
-              run: docker build -t $BOT_IMAGE_NAME . -f Dockerfile-bot
+              run: docker build -t $BOT_IMAGE_NAME:latest -t $BOT_IMAGE_NAME:$GITHUB_SHA . -f Dockerfile-bot
 
             - name: Build Docker image for server
-              run: docker build -t $SERVER_IMAGE_NAME . -f Dockerfile-server
+              run: docker build -t $SERVER_IMAGE_NAME:latest -t $SERVER_IMAGE_NAME:$GITHUB_SHA . -f Dockerfile-server
 
             - name: Build Docker image for initializer
-              run: docker build -t $INITIALIZER_IMAGE_NAME . -f Dockerfile-initializer
+              run: docker build -t $INITIALIZER_IMAGE_NAME:latest -t $INITIALIZER_IMAGE_NAME:$GITHUB_SHA . -f Dockerfile-initializer
+
+            - name: Build Docker image for maintenance
+              run: docker build -t $MAINTENANCE_IMAGE_NAME:latest -t $MAINTENANCE_IMAGE_NAME:$GITHUB_SHA . -f Dockerfile-maintenance
 
             - name: Push Docker image for bot to ghcr.io
-              run: docker push $BOT_IMAGE_NAME
+              run: docker push --all-tags $BOT_IMAGE_NAME
 
             - name: Push Docker image for server to ghcr.io
-              run: docker push $SERVER_IMAGE_NAME
+              run: docker push --all-tags $SERVER_IMAGE_NAME
 
             - name: Push Docker image for initializer to ghcr.io
-              run: docker push $INITIALIZER_IMAGE_NAME
+              run: docker push --all-tags $INITIALIZER_IMAGE_NAME
+
+            - name: Push Docker image for maintenance to ghcr.io
+              run: docker push --all-tags $MAINTENANCE_IMAGE_NAME

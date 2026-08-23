@@ -12,7 +12,8 @@ class GroupRepository:
         """Gets group by id"""
         return self.session.query(Group).filter(Group.id == group_id).one_or_none()
 
-    def get(self, faculty_id: Optional[int] = None, course: Optional[int] = None, name: Optional[str] = None) -> Optional[Group]:
+    def get(self, faculty_id: Optional[int] = None, course: Optional[int] = None,
+            name: Optional[str] = None, include_inactive: bool = False) -> List[Group]:
         """Gets group by id"""
 
         query_parameters = []
@@ -27,11 +28,22 @@ class GroupRepository:
             search = "%{}%".format(name)
             query_parameters.append(Group.name.like(search))
 
-        return self.session.query(Group).filter(*query_parameters).all()
+        if not include_inactive:
+            query_parameters.append(Group.is_active.is_(True))
 
-    def get_all(self) -> List[Group]:
+        return (
+            self.session.query(Group)
+            .filter(*query_parameters)
+            .order_by(Group.course.asc(), Group.name.asc())
+            .all()
+        )
+
+    def get_all(self, include_inactive: bool = False) -> List[Group]:
         """Gets all groups stored in db"""
-        return self.session.query(Group).all()
+        query = self.session.query(Group)
+        if not include_inactive:
+            query = query.filter(Group.is_active.is_(True))
+        return query.order_by(Group.course.asc(), Group.name.asc()).all()
 
     def get_courses_in_faculty(self, faculty_id: int):
         """
@@ -40,7 +52,10 @@ class GroupRepository:
         :return: courses list
         """
         session = self.session
-        courses = session.query(Group.course).filter(Group.faculty_id == faculty_id).distinct().all()
+        courses = session.query(Group.course).filter(
+            Group.faculty_id == faculty_id,
+            Group.is_active.is_(True),
+        ).distinct().all()
         courses = list(map(lambda wrapped_list: wrapped_list[0], courses))
         courses.sort()
         return courses
@@ -52,4 +67,8 @@ class GroupRepository:
         :param course: course number
         :return: list of group objects
         """
-        return self.session.query(Group).filter(Group.faculty_id == faculty_id, Group.course == course).all()
+        return self.session.query(Group).filter(
+            Group.faculty_id == faculty_id,
+            Group.course == course,
+            Group.is_active.is_(True),
+        ).order_by(Group.name.asc()).all()
