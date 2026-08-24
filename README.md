@@ -21,3 +21,21 @@ Now you can use application running `main.py` script.
 To run api server in dev mode use following command
 
 `uvicorn server:app --env-file .env --reload --host 0.0.0.0`
+
+### Runtime feature flags
+
+Feature flags are stored in the database and evaluated on every request, so a
+change does not require an API restart. They default to `false` if configuration
+storage is unavailable.
+
+The public read-only configuration is available at `GET /app/config`. Change a
+flag from an authenticated server shell instead of exposing an admin web page:
+
+```sh
+python3 manage_feature_flags.py list
+python3 manage_feature_flags.py set room_map_button_enabled false
+python3 manage_feature_flags.py set room_map_caption_enabled false
+```
+
+Only the flags listed by the command are accepted. Each write records its
+database update time.

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime, date
 from bs4 import BeautifulSoup
 from typing import List, Optional
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urljoin, urlparse, parse_qs
 
 from core.types.lesson import Lesson
 
@@ -76,24 +76,67 @@ class UneconParser:
                 else:
                     lesson_group = None
 
-                lesson_location_span = tr.find("span", {"class": "aud"})
+                # The source repeats room markup for several responsive
+                # breakpoints. Prefer the desktop cell because its room and
+                # building spans are separate and therefore do not mix the
+                # room-map button caption into the visible location.
+                lesson_location_span = tr.select_one("td.no_768 span.aud")
+                lesson_building_span = tr.select_one("td.no_768 span.korpus")
 
                 lesson_location: Optional[str] = None
+                lesson_room_url: Optional[str] = None
+                lesson_room_map_caption: Optional[str] = None
 
-                if lesson_location_span.text:
-                    lesson_location = lesson_location_span.text.strip()
+                if lesson_location_span is not None:
+                    room_link = lesson_location_span.select_one("a[href]")
+                    if room_link is not None:
+                        lesson_room_url = urljoin(
+                            "https://rasp.unecon.ru/",
+                            room_link.get("href", ""),
+                        )
+                        lesson_room_map_caption = room_link.get_text(
+                            " ", strip=True
+                        ) or None
+
+                    # Read only the text directly owned by the room span. This
+                    # intentionally excludes button text such as "НА СХЕМЕ
+                    # ЛИНГВОБАШНИ".
+                    room = " ".join(
+                        text.strip()
+                        for text in lesson_location_span.find_all(
+                            string=True,
+                            recursive=False,
+                        )
+                        if text.strip()
+                    )
+                    building = (
+                        lesson_building_span.get_text(" ", strip=True)
+                        if lesson_building_span is not None
+                        else ""
+                    )
+                    lesson_location = " ".join(
+                        part for part in (room, building) if part
+                    )
 
                 lessons_location_remote_span = tr.find("span", {"class": "prim"})
 
-                if lessons_location_remote_span.text:
-                    lesson_location = lessons_location_remote_span.text
+                if (
+                    lessons_location_remote_span is not None
+                    and lessons_location_remote_span.get_text(" ", strip=True)
+                ):
+                    lesson_location = lessons_location_remote_span.get_text(
+                        " ", strip=True
+                    )
+                    lesson_room_url = None
+                    lesson_room_map_caption = None
 
-                if lesson_location:
-                    lesson_location = lesson_location.replace('ПОКАЗАТЬ НА СХЕМЕ', '')
+                lesson_location = lesson_location or ""
 
                 lesson = Lesson(lesson_name, lesson_day,
                                 lesson_day_of_week, lesson_time, lesson_professor,
-                                lesson_location, lesson_group, lesson_professor_id)
+                                lesson_location, lesson_group,
+                                lesson_professor_id, lesson_room_url,
+                                lesson_room_map_caption)
                 lessons.append(lesson)
 
         return lessons

@@ -14,6 +14,8 @@ class Lesson:
     location: str
     group: str
     professor_id: int
+    room_url: Optional[str] = None
+    room_map_caption: Optional[str] = None
 
     def get_start_date(self) -> datetime:
         day_pattern = '%d.%m.%Y'

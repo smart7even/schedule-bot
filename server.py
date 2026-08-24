@@ -2,7 +2,7 @@ import re
 from typing import Optional
 from datetime import datetime
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 
 from core.repositories.asset_repository import AssetRepository
 from core.repositories.faculty_repository import FacultyRepository
@@ -14,6 +14,7 @@ from core.services.schedule_context_service import (
     ScheduleSourceError,
     get_schedule_context,
 )
+from core.services.app_config_service import AppConfig, get_app_config
 from core.types.lesson import Lesson
 from core.utils.date_utils import get_study_week_number
 from core.utils.academic_year import academic_week_for
@@ -26,6 +27,13 @@ app = FastAPI()
 async def health():
     """Process-level health check that does not depend on UNECON availability."""
     return {"status": "ok"}
+
+
+@app.get("/app/config")
+async def get_public_app_config(response: Response):
+    """Public, read-only feature configuration for released clients."""
+    response.headers["Cache-Control"] = "no-store"
+    return get_app_config().to_dict()
 
 
 @app.get("/faculty")
@@ -83,7 +91,7 @@ async def get_group_schedule(group_id: int, week: Optional[int] = None):
         lessons = page_parser.parse_page()
         week = page_parser.get_current_week_number()
 
-        dict_lessons = lessons_to_dict(lessons)
+        dict_lessons = lessons_to_dict(lessons, get_app_config())
 
         return {
             'week': week,
@@ -111,7 +119,7 @@ def get_professor_schedule(professor_id: int, week: Optional[int] = None):
         lessons = page_parser.parse_page()
         week = page_parser.get_current_week_number()
 
-        dict_lessons = lessons_to_dict(lessons)
+        dict_lessons = lessons_to_dict(lessons, get_app_config())
 
         return {
             'week': week,
@@ -172,7 +180,7 @@ async def get_next_lessons(group_id: int, after_date: Optional[str] = None):
 
     if len(lessons_after_date) != 0:
         return {
-            'lessons': lessons_to_dict(lessons_after_date)
+            'lessons': lessons_to_dict(lessons_after_date, get_app_config())
         }
 
     next_week = week + 1 if week < 53 else 1
@@ -191,7 +199,7 @@ async def get_next_lessons(group_id: int, after_date: Optional[str] = None):
 
     if len(lessons_after_date) != 0:
         return {
-            'lessons': lessons_to_dict(lessons_after_date)
+            'lessons': lessons_to_dict(lessons_after_date, get_app_config())
         }
 
     return {
@@ -238,13 +246,24 @@ def get_lessons_after_date(lessons: list[Lesson], date: datetime) -> list[Lesson
     return []
 
 
-def lessons_to_dict(lessons: list[Lesson]) -> list[dict]:
+def lessons_to_dict(
+    lessons: list[Lesson],
+    app_config: Optional[AppConfig] = None,
+) -> list[dict]:
+    app_config = app_config or AppConfig()
     dict_lessons = []
 
     for lesson in lessons:
         day = lesson.get_day_start_date()
         start_time = lesson.get_start_date()
         end_time = lesson.get_end_date()
+
+        location = lesson.location
+        if (
+            app_config.room_map_caption_enabled
+            and lesson.room_map_caption
+        ):
+            location = " ".join((location, lesson.room_map_caption)).strip()
 
         dict_lesson = {
             'name': lesson.name,
@@ -253,11 +272,14 @@ def lessons_to_dict(lessons: list[Lesson]) -> list[dict]:
             'start': start_time,
             'end': end_time,
             'professor': lesson.professor,
-            'location': lesson.location,
+            'location': location,
             'lesson_type': lesson.get_lesson_type(),
             'is_elective': lesson.get_is_elective(),
             'group': lesson.group,
             'professor_id': lesson.professor_id,
+            # Optional additive field: released clients ignore it and keep
+            # using the plain location string.
+            'room_url': lesson.room_url,
         }
 
         dict_lessons.append(dict_lesson)
