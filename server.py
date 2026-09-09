@@ -1,8 +1,10 @@
 import re
+from datetime import date, datetime
+from functools import lru_cache
 from typing import Optional
-from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Response
+from requests import RequestException
 
 from core.repositories.asset_repository import AssetRepository
 from core.repositories.faculty_repository import FacultyRepository
@@ -21,6 +23,72 @@ from core.utils.academic_year import academic_week_for
 from db import Session
 
 app = FastAPI()
+
+
+_PUBLICATION_HORIZON_TTL_SECONDS = 300
+
+
+def _publication_cache_bucket() -> int:
+    return int(datetime.now().timestamp() // _PUBLICATION_HORIZON_TTL_SECONDS)
+
+
+@lru_cache(maxsize=512)
+def _group_published_through(group_id: int, cache_bucket: int):
+    del cache_bucket
+    response = unecon_request(
+        group_id=group_id,
+        semester=True,
+        timeout=(2, 4),
+    )
+    if response.status_code != 200:
+        return None
+    return UneconParser(response.text).get_schedule_period().end
+
+
+@lru_cache(maxsize=512)
+def _professor_published_through(professor_id: int, cache_bucket: int):
+    del cache_bucket
+    response = unecon_professor_request(
+        professor_id=professor_id,
+        semester=True,
+        timeout=(2, 4),
+    )
+    if response.status_code != 200:
+        return None
+    return UneconParser(response.text).get_schedule_period().end
+
+
+def _has_schedule_days(period, lessons, published_through) -> bool:
+    """Distinguish an authoritative all-free week from an unpublished one.
+
+    UNECON renders both as an empty lesson table. Its semester page exposes the
+    latest published date, which makes empty weeks inside that horizon
+    authoritative. Past empty weeks are also safe to treat as published. If the
+    horizon probe fails or the requested future week lies beyond it, preserve
+    the explicit unpublished state.
+    """
+    if lessons:
+        return True
+    if period.end < date.today():
+        return True
+    return published_through is not None and published_through >= period.end
+
+
+def _safe_group_published_through(group_id: int):
+    try:
+        return _group_published_through(group_id, _publication_cache_bucket())
+    except (ValueError, RequestException):
+        return None
+
+
+def _safe_professor_published_through(professor_id: int):
+    try:
+        return _professor_published_through(
+            professor_id,
+            _publication_cache_bucket(),
+        )
+    except (ValueError, RequestException):
+        return None
 
 
 @app.get("/health")
@@ -98,6 +166,12 @@ async def get_group_schedule(group_id: int, week: Optional[int] = None):
             'academic_year_start': period.academic_year_start,
             'period_start': period.start.isoformat(),
             'period_end': period.end.isoformat(),
+            'has_schedule_days': _has_schedule_days(
+                period,
+                lessons,
+                _safe_group_published_through(group_id)
+                if not lessons and period.end >= date.today() else None,
+            ),
             'lessons': dict_lessons
         }
 
@@ -126,6 +200,12 @@ def get_professor_schedule(professor_id: int, week: Optional[int] = None):
             'academic_year_start': period.academic_year_start,
             'period_start': period.start.isoformat(),
             'period_end': period.end.isoformat(),
+            'has_schedule_days': _has_schedule_days(
+                period,
+                lessons,
+                _safe_professor_published_through(professor_id)
+                if not lessons and period.end >= date.today() else None,
+            ),
             'lessons': dict_lessons
         }
 

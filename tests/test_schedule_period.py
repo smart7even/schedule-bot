@@ -90,6 +90,7 @@ class SchedulePeriodTest(unittest.TestCase):
 
         self.assertEqual(52, result["week"])
         self.assertEqual([], result["lessons"])
+        self.assertTrue(result["has_schedule_days"])
         self.assertEqual("2026-08-24", result["period_start"])
         self.assertEqual(2025, result["academic_year_start"])
 
