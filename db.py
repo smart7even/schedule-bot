@@ -11,7 +11,11 @@ connect_url = os.getenv("DATABASE_URL")
 if connect_url is None:
     raise ValueError("DATABASE_URL environment variable not set")
 
-engine = create_engine(connect_url, echo=True)
+engine = create_engine(
+    connect_url,
+    echo=os.getenv("SQLALCHEMY_ECHO", "false").lower() == "true",
+    pool_pre_ping=True,
+)
 Base.metadata.create_all(bind=engine)
 
 Session = sessionmaker()

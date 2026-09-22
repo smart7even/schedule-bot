@@ -15,8 +15,14 @@ services:
       - SCHEDULE_BOT_TOKEN=${SCHEDULE_BOT_TOKEN}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       - TZ=Europe/Moscow
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - DEPLOYMENT_ENVIRONMENT=production
+    depends_on:
+      - db
+      - otel-collector
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live', timeout=5)"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -35,8 +41,22 @@ services:
       - TZ=Europe/Moscow
       - SCHEDULE_OBSERVATION_INTERVAL=3600
       - GROUP_SYNC_INTERVAL=86400
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - DEPLOYMENT_ENVIRONMENT=production
     depends_on:
       - db
+      - otel-collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.136.0
+    restart: always
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    environment:
+      - TELEMETRY_API_KEY=${TELEMETRY_API_KEY:-unused}
+      - TELEMETRY_PROJECT=${TELEMETRY_PROJECT:-local}
+    volumes:
+      - ${OTEL_COLLECTOR_CONFIG_PATH:-./ops/otel-collector.example.yaml}:/etc/otelcol-contrib/config.yaml:ro
+    mem_limit: 192m
   db:
     image: postgres:15.4
     restart: always

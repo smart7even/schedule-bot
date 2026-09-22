@@ -1,11 +1,23 @@
 import re
+import logging
+import time
+import uuid
 from datetime import date, datetime
 from functools import lru_cache
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import JSONResponse
 from requests import RequestException
 
+from core.health import database_is_ready
+from core.observability import (
+    HttpMetrics,
+    configure_observability,
+    log_event,
+    normalized_route,
+    safe_path_dimensions,
+)
 from core.repositories.asset_repository import AssetRepository
 from core.repositories.faculty_repository import FacultyRepository
 from core.repositories.group_repository import GroupRepository
@@ -22,10 +34,61 @@ from core.utils.date_utils import get_study_week_number
 from core.utils.academic_year import academic_week_for
 from db import Session
 
+configure_observability("schedule-api")
 app = FastAPI()
+logger = logging.getLogger("schedule-api")
+http_metrics = HttpMetrics()
 
 
 _PUBLICATION_HORIZON_TTL_SECONDS = 300
+
+
+@app.middleware("http")
+async def observe_request(request: Request, call_next):
+    started = time.monotonic()
+    request_id = str(uuid.uuid4())
+    status_code = 500
+    error = None
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        response.headers["X-Request-ID"] = request_id
+        return response
+    except Exception as exception:
+        error = exception
+        response = JSONResponse(
+            status_code=500,
+            content={"detail": "Internal Server Error"},
+            headers={"X-Request-ID": request_id},
+        )
+        return response
+    finally:
+        duration_ms = round((time.monotonic() - started) * 1000, 2)
+        route = normalized_route(request.scope)
+        http_metrics.record(
+            request.method,
+            route,
+            status_code,
+            duration_ms,
+        )
+        if route != "/health/live" or status_code >= 400:
+            fields = {
+                "request_id": request_id,
+                "http_method": request.method,
+                "http_route": route,
+                "http_status_code": status_code,
+                "duration_ms": duration_ms,
+                **safe_path_dimensions(request.path_params),
+            }
+            if error is not None:
+                fields["exception_type"] = type(error).__name__
+            log_event(
+                logger,
+                logging.ERROR if error else logging.INFO,
+                "http.request",
+                "HTTP request failed" if error else "HTTP request completed",
+                fields,
+            )
 
 
 def _publication_cache_bucket() -> int:
@@ -95,6 +158,30 @@ def _safe_professor_published_through(professor_id: int):
 async def health():
     """Process-level health check that does not depend on UNECON availability."""
     return {"status": "ok"}
+
+
+@app.get("/health/live")
+async def liveness():
+    """Process-only liveness used for container restart decisions."""
+    return {"status": "ok"}
+
+
+@app.get("/health/ready")
+async def readiness():
+    """Readiness verifies the API can reach its required database."""
+    if await database_is_ready():
+        return {"status": "ready"}
+    log_event(
+        logger,
+        logging.WARNING,
+        "health.readiness_failed",
+        "Database readiness check failed",
+    )
+    return JSONResponse(
+        status_code=503,
+        content={"status": "not_ready"},
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @app.get("/app/config")

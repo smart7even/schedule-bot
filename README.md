@@ -39,3 +39,11 @@ python3 manage_feature_flags.py set room_map_caption_enabled false
 
 Only the flags listed by the command are accepted. Each write records its
 database update time.
+
+### Observability
+
+The backend provides separate `GET /health/live` and `GET /health/ready`
+probes, writes structured JSON logs, and exports bounded HTTP metrics through
+standard OTLP when a collector endpoint is configured. See
+[`docs/observability.md`](docs/observability.md) for the event schema, privacy
+constraints, and local collector setup.
