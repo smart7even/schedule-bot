@@ -1,7 +1,6 @@
 import logging
 import os
 import time
-from dataclasses import asdict
 from datetime import datetime, timedelta
 
 from core.observability import configure_observability, log_event
@@ -69,7 +68,12 @@ def main():
                     "group_sync.success",
                     "Group synchronization succeeded",
                     {
-                        **asdict(result),
+                        "faculties": result.faculties,
+                        "groups": result.groups,
+                        "groups_created": result.created,
+                        "groups_updated": result.updated,
+                        "groups_missing": result.missing,
+                        "groups_deactivated": result.deactivated,
                         "duration_ms": round(
                             (time.monotonic() - sync_started) * 1000, 2
                         ),

@@ -8,7 +8,12 @@ from unittest.mock import MagicMock, patch
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
 from core.health import database_is_ready
-from core.observability import JsonFormatter, normalized_route, safe_path_dimensions
+from core.observability import (
+    JsonFormatter,
+    log_event,
+    normalized_route,
+    safe_path_dimensions,
+)
 
 
 class ObservabilityTest(unittest.TestCase):
@@ -61,6 +66,24 @@ class ObservabilityTest(unittest.TestCase):
             side_effect=RuntimeError("database detail must stay private"),
         ):
             self.assertFalse(asyncio.run(database_is_ready(0.1)))
+
+    def test_event_fields_do_not_collide_with_log_record_fields(self):
+        logger = logging.getLogger("observability-test")
+        with self.assertRaises(KeyError):
+            log_event(
+                logger,
+                logging.INFO,
+                "bad",
+                "bad",
+                {"created": 1},
+            )
+        log_event(
+            logger,
+            logging.INFO,
+            "group_sync.success",
+            "Group synchronization succeeded",
+            {"groups_created": 1},
+        )
 
 
 if __name__ == "__main__":
