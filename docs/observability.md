@@ -41,3 +41,16 @@ only required application-independent step when changing telemetry backends.
 that writes received telemetry to the collector's debug exporter. Set
 `OTEL_COLLECTOR_CONFIG_PATH` to an absolute private configuration path in a
 deployment environment.
+
+## External synthetic check
+
+`ops/synthetic_check/index.py` is a provider-neutral scheduled-function
+handler. It checks public liveness, readiness, and the schedule-context path,
+then fails the invocation if any check fails. Configure `TARGET_BASE_URL` only
+in the private deployment environment. The emitted summary contains paths,
+durations, booleans, and stable error types; it does not include the target
+hostname, response bodies, or exception messages.
+
+Run the probe outside the backend's hosting failure domain. Alerting should
+require consecutive failed invocations and should send a recovery notification
+after the invocation becomes healthy again.
