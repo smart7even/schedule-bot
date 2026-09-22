@@ -29,6 +29,9 @@ from core.services.schedule_context_service import (
     get_schedule_context,
 )
 from core.services.app_config_service import AppConfig, get_app_config
+from core.services.group_usage_dimensions_service import (
+    GroupUsageDimensionsCache,
+)
 from core.types.lesson import Lesson
 from core.utils.date_utils import get_study_week_number
 from core.utils.academic_year import academic_week_for
@@ -38,6 +41,7 @@ configure_observability("schedule-api")
 app = FastAPI()
 logger = logging.getLogger("schedule-api")
 http_metrics = HttpMetrics()
+group_usage_dimensions = GroupUsageDimensionsCache()
 
 
 _PUBLICATION_HORIZON_TTL_SECONDS = 300
@@ -72,14 +76,19 @@ async def observe_request(request: Request, call_next):
             duration_ms,
         )
         if route != "/health/live" or status_code >= 400:
+            path_dimensions = safe_path_dimensions(request.path_params)
             fields = {
                 "request_id": request_id,
                 "http_method": request.method,
                 "http_route": route,
                 "http_status_code": status_code,
                 "duration_ms": duration_ms,
-                **safe_path_dimensions(request.path_params),
+                **path_dimensions,
             }
+            if "group_id" in path_dimensions:
+                fields.update(
+                    group_usage_dimensions.resolve(path_dimensions["group_id"])
+                )
             if error is not None:
                 fields["exception_type"] = type(error).__name__
             log_event(

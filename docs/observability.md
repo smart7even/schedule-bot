@@ -19,6 +19,36 @@ duration, request ID, and numeric public schedule identifiers when present.
 They never include query strings, headers, request bodies, or response bodies.
 This permits group-level analysis without turning group IDs into metric labels.
 
+Requests whose normalized path contains `group_id` are enriched from the
+backend group directory with a cached metadata snapshot when available:
+
+- `group_name`
+- `group_course`
+- `group_faculty_id`
+
+The lookup is bounded, cached for one hour, and fail-open. Missing metadata or
+a datastore lookup failure does not affect the request and simply omits these
+optional fields. Detailed group fields remain log attributes only and must not
+be added to metric labels.
+
+## Request-usage dashboard semantics
+
+The request-usage dashboard is built from `http.request` log records. Its core
+group-schedule views should filter to normalized schedule routes and use:
+
+- record count for backend request volume over time;
+- `group_course` for course breakdowns;
+- `group_name` or `group_id` for group breakdowns;
+- `http_status_code` for success/error views;
+- `duration_ms` for latency views where the telemetry backend supports numeric
+  log aggregation.
+
+These values are backend requests, not unique users. They exclude schedule
+views served entirely from the mobile cache and may include several refreshes
+from one installation. Keep that interpretation visible next to the dashboard.
+The structured field contract is provider-neutral, so the same records can be
+exported to another log store or analytics system without changing the API.
+
 Maintenance emits stable events for schedule observation and group sync:
 
 - `schedule_observation.success` / `schedule_observation.failure`
