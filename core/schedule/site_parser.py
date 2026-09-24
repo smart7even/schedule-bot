@@ -118,17 +118,21 @@ class UneconParser:
                         part for part in (room, building) if part
                     )
 
-                lessons_location_remote_span = tr.find("span", {"class": "prim"})
+                note_span = tr.find("span", {"class": "prim"})
+                lesson_note = (
+                    note_span.get_text(" ", strip=True) or None
+                    if note_span is not None else None
+                )
 
-                if (
-                    lessons_location_remote_span is not None
-                    and lessons_location_remote_span.get_text(" ", strip=True)
-                ):
-                    lesson_location = lessons_location_remote_span.get_text(
-                        " ", strip=True
+                # `prim` is a free-form note, not a replacement for the room.
+                # Keep it in location for already released clients, which do
+                # not know the additive `note` response field yet. With no
+                # physical room, the note remains the visible fallback (for
+                # example, a remote-lesson instruction).
+                if lesson_note:
+                    lesson_location = " · ".join(
+                        part for part in (lesson_location, lesson_note) if part
                     )
-                    lesson_room_url = None
-                    lesson_room_map_caption = None
 
                 lesson_location = lesson_location or ""
 
@@ -136,7 +140,7 @@ class UneconParser:
                                 lesson_day_of_week, lesson_time, lesson_professor,
                                 lesson_location, lesson_group,
                                 lesson_professor_id, lesson_room_url,
-                                lesson_room_map_caption)
+                                lesson_room_map_caption, lesson_note)
                 lessons.append(lesson)
 
         return lessons

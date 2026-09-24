@@ -67,6 +67,21 @@ class FeatureFlagTest(unittest.TestCase):
         self.assertNotIn("СХЕМЕ", hidden["location"])
         self.assertIn("НА СХЕМЕ ЛИНГВОБАШНИ", visible["location"])
 
+    def test_note_is_additive_and_legacy_location_keeps_both_values(self):
+        lesson = Lesson(
+            "Экономическая статистика (Лекция)",
+            "22.09.2026", "ВТ", "12:50 - 14:20", None,
+            "102 ауд. Москательный 4 · Чуракова И.Ю.", None, None,
+            "https://staff.unecon.ru/unecon_scheme.php?initial_search=102",
+            "НА СХЕМЕ МОСКАТЕЛЬНЫЙ", "Чуракова И.Ю.",
+        )
+
+        response = lessons_to_dict([lesson], AppConfig())[0]
+
+        self.assertEqual(lesson.location, response["location"])
+        self.assertEqual(lesson.note, response["note"])
+        self.assertEqual(lesson.room_url, response["room_url"])
+
 
 if __name__ == "__main__":
     unittest.main()

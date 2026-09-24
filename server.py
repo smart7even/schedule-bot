@@ -449,6 +449,7 @@ def lessons_to_dict(
             'end': end_time,
             'professor': lesson.professor,
             'location': location,
+            'note': lesson.note,
             'lesson_type': lesson.get_lesson_type(),
             'is_elective': lesson.get_is_elective(),
             'group': lesson.group,
