@@ -6,13 +6,15 @@ from datetime import date, datetime
 from functools import lru_cache
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse
 from requests import RequestException
 
 from core.health import database_is_ready
 from core.observability import (
     HttpMetrics,
+    client_request_dimensions,
+    validated_request_id,
     configure_observability,
     log_event,
     normalized_route,
@@ -50,7 +52,7 @@ _PUBLICATION_HORIZON_TTL_SECONDS = 300
 @app.middleware("http")
 async def observe_request(request: Request, call_next):
     started = time.monotonic()
-    request_id = str(uuid.uuid4())
+    request_id = validated_request_id(request.headers) or uuid.uuid4().hex
     status_code = 500
     error = None
     try:
@@ -84,6 +86,7 @@ async def observe_request(request: Request, call_next):
                 "http_status_code": status_code,
                 "duration_ms": duration_ms,
                 **path_dimensions,
+                **client_request_dimensions(request.headers),
             }
             if "group_id" in path_dimensions:
                 fields.update(
@@ -194,10 +197,19 @@ async def readiness():
 
 
 @app.get("/app/config")
-async def get_public_app_config(response: Response):
+async def get_public_app_config(
+    response: Response,
+    group_id: Optional[int] = Query(default=None, ge=1),
+    platform: Optional[str] = Query(default=None, min_length=1, max_length=32),
+    app_version: Optional[str] = Query(default=None, min_length=1, max_length=32),
+):
     """Public, read-only feature configuration for released clients."""
     response.headers["Cache-Control"] = "no-store"
-    return get_app_config().to_dict()
+    return get_app_config(
+        group_id=group_id,
+        platform=platform,
+        app_version=app_version,
+    ).to_dict()
 
 
 @app.get("/faculty")

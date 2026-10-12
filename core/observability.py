@@ -1,3 +1,4 @@
+import re
 import json
 import logging
 import os
@@ -203,3 +204,24 @@ def log_event(
         extra={"event": event, **(fields or {})},
         exc_info=exc_info,
     )
+
+
+def client_request_dimensions(headers):
+    """Untrusted client hints, allowlisted for logs only, never metric labels."""
+    fields = {}
+    rules = {
+        "x-app-version": ("app_version", r"[0-9]{1,4}\.[0-9]{1,4}\.[0-9]{1,4}"),
+        "x-app-build": ("app_build", r"[0-9]{1,10}"),
+        "x-app-platform": ("app_platform", r"android|ios|macos|windows|linux|web"),
+        "x-installation-id": ("installation_id", r"[a-f0-9]{32}"),
+    }
+    for header, (field, pattern) in rules.items():
+        value = headers.get(header, "")
+        if len(value) <= 40 and re.fullmatch(pattern, value):
+            fields[field] = value
+    return fields
+
+
+def validated_request_id(headers):
+    value = headers.get("x-request-id", "")
+    return value if re.fullmatch(r"[a-f0-9]{32}", value) else None
