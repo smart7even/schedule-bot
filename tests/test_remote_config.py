@@ -41,6 +41,7 @@ class RemoteConfigTest(unittest.TestCase):
 
     def _experiment_document(self):
         document = copy.deepcopy(DEFAULT_REMOTE_CONFIG_DOCUMENT)
+        document["parameters"]["schedule_auto_scroll_today"]["default"] = True
         document["parameters"]["schedule_auto_scroll_today"]["rules"] = [
             {
                 "id": "first-course-off",
@@ -94,6 +95,7 @@ class RemoteConfigTest(unittest.TestCase):
 
     def test_time_between_is_half_open_and_supports_overnight_ranges(self):
         document = copy.deepcopy(DEFAULT_REMOTE_CONFIG_DOCUMENT)
+        document["parameters"]["schedule_auto_scroll_today"]["default"] = True
         parameter = document["parameters"]["schedule_auto_scroll_today"]
         parameter["default"] = False
         parameter["rules"] = [
@@ -176,6 +178,7 @@ class RemoteConfigTest(unittest.TestCase):
 
     def test_structured_payloads_are_preserved(self):
         document = copy.deepcopy(DEFAULT_REMOTE_CONFIG_DOCUMENT)
+        document["parameters"]["schedule_auto_scroll_today"]["default"] = True
         document["parameters"]["banner"] = {
             "default": {"title": "Hello", "items": [1, 2]},
             "rules": [],

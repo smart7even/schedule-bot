@@ -26,14 +26,14 @@ DEFAULT_REMOTE_CONFIG_DOCUMENT = {
     "parameters": {
         "schedule_auto_scroll_today": {
             "description": "Start the current week at today's section on cold launch.",
-            "default": True,
+            "default": False,
             "rules": [],
         },
     },
 }
 
 DEFAULT_REMOTE_PAYLOAD = {
-    "schedule_auto_scroll_today": True,
+    "schedule_auto_scroll_today": False,
 }
 
 _PARAMETER_KEY_PATTERN = re.compile(r"^[a-z][a-z0-9_.-]{0,63}$")

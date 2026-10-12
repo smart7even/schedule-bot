@@ -13,6 +13,8 @@ from requests import RequestException
 from core.health import database_is_ready
 from core.observability import (
     HttpMetrics,
+    client_request_dimensions,
+    validated_request_id,
     configure_observability,
     log_event,
     normalized_route,
@@ -50,7 +52,7 @@ _PUBLICATION_HORIZON_TTL_SECONDS = 300
 @app.middleware("http")
 async def observe_request(request: Request, call_next):
     started = time.monotonic()
-    request_id = str(uuid.uuid4())
+    request_id = validated_request_id(request.headers) or uuid.uuid4().hex
     status_code = 500
     error = None
     try:
@@ -84,6 +86,7 @@ async def observe_request(request: Request, call_next):
                 "http_status_code": status_code,
                 "duration_ms": duration_ms,
                 **path_dimensions,
+                **client_request_dimensions(request.headers),
             }
             if "group_id" in path_dimensions:
                 fields.update(

@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 class AppConfig:
     room_map_button_enabled: bool = False
     room_map_caption_enabled: bool = False
-    schedule_auto_scroll_today: bool = True
+    schedule_auto_scroll_today: bool = False
     revision: int = 0
     refresh_interval_seconds: int = DEFAULT_REFRESH_INTERVAL_SECONDS
     payload: Dict[str, Any] = field(
