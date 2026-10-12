@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "refresh_interval_seconds": 300,
+  "parameters": {
+    "schedule_auto_scroll_today": {
+      "description": "Start the current week at today's section on cold launch.",
+      "default": true,
+      "rules": [
+        {
+          "id": "first-course-off",
+          "description": "First match wins, so this exclusion beats the morning rule.",
+          "conditions": [
+            {
+              "attribute": "group.course",
+              "operator": "in",
+              "value": [1]
+            }
+          ],
+          "value": false
+        },
+        {
+          "id": "moscow-morning-on",
+          "conditions": [
+            {
+              "attribute": "request.time_msk",
+              "operator": "time_between",
+              "value": {
+                "start": "09:00",
+                "end": "12:00"
+              }
+            }
+          ],
+          "value": true
+        }
+      ]
+    },
+    "schedule_banner": {
+      "description": "Example structured payload; unknown keys are ignored by old clients.",
+      "default": null,
+      "rules": [
+        {
+          "id": "second-course-message",
+          "conditions": [
+            {
+              "attribute": "group.course",
+              "operator": "equals",
+              "value": 2
+            }
+          ],
+          "value": {
+            "title": "Пример payload",
+            "tone": "neutral"
+          }
+        }
+      ]
+    }
+  }
+}

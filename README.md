@@ -65,3 +65,50 @@ compare the public response as well. Use a new seed for each release; include
 any reported group with `--group-id` while investigating it. An automated
 GitHub Actions run performs a new source/parser sample each Wednesday. It does
 not change university data or production configuration.
+
+### Remote app configuration
+
+`GET /app/config` also evaluates the versioned `mobile_app` configuration.
+Each parameter has a default JSON value and an ordered list of rules. Rules are
+checked from top to bottom and the first matching rule wins for that parameter.
+All conditions inside one rule use AND semantics; use multiple ordered rules
+to express OR. Unknown parameters remain available as JSON payloads and are
+ignored safely by clients that do not understand them.
+
+The evaluator accepts only bounded, allowlisted attributes and operators:
+
+- server-resolved `group.id`, `group.course`, and `group.faculty_id`;
+- server-owned `request.time_msk` and `request.weekday_msk`;
+- client-declared `client.platform` and `client.version`;
+- `equals`, `not_equals`, `in`, `not_in`, and half-open
+  `time_between` ranges (`start <= time < end`, including overnight ranges).
+
+There is no public write endpoint. Validate and preview a candidate from an
+authenticated server shell before publishing it atomically:
+
+```sh
+python3 manage_remote_config.py validate remote_config.example.json
+python3 manage_remote_config.py evaluate --file remote_config.example.json \
+  --group-id 13872 --at 2026-09-16T10:00:00+03:00
+python3 manage_remote_config.py set remote_config.example.json
+python3 manage_remote_config.py show
+python3 manage_remote_config.py history
+python3 manage_remote_config.py rollback 1
+```
+
+Every publish creates an immutable revision. Rollback republishes an earlier
+document as a new revision, preserving the audit trail. The public endpoint
+returns the resolved payload, revision, and a bounded client refresh interval;
+rule identifiers and the rule document remain server-side.
+
+### Telemetry routing
+
+The `telemetry` remote parameter accepts `{"mode":"appmetrica"}`, `{"mode":"off"}`,
+or `{"mode":"sentry","sentry_dsn":"https://PUBLIC_KEY@sentry.roadmapik.com/PROJECT_ID"}`
+(`both` sends to both providers). The collector host is allowlisted on server and
+client. Include this object as a parameter's `default` or rule `value`; publish
+with `manage_remote_config.py set FILE`, inspect with `show`/`history`, or use
+`rollback REVISION`. Revisions are immutable; rollback creates a new revision.
+The new client polls every five minutes (configurable 60–3600 seconds), uses its
+last valid cached config on restart, and retains it during outages. Older clients
+ignore these additive fields and continue using AppMetrica.

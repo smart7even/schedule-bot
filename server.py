@@ -6,7 +6,7 @@ from datetime import date, datetime
 from functools import lru_cache
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse
 from requests import RequestException
 
@@ -194,10 +194,19 @@ async def readiness():
 
 
 @app.get("/app/config")
-async def get_public_app_config(response: Response):
+async def get_public_app_config(
+    response: Response,
+    group_id: Optional[int] = Query(default=None, ge=1),
+    platform: Optional[str] = Query(default=None, min_length=1, max_length=32),
+    app_version: Optional[str] = Query(default=None, min_length=1, max_length=32),
+):
     """Public, read-only feature configuration for released clients."""
     response.headers["Cache-Control"] = "no-store"
-    return get_app_config().to_dict()
+    return get_app_config(
+        group_id=group_id,
+        platform=platform,
+        app_version=app_version,
+    ).to_dict()
 
 
 @app.get("/faculty")
